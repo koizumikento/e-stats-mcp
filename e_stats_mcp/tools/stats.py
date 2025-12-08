@@ -456,4 +456,11 @@ async def get_stats_data_bulk(
     if limit:
         params["limit"] = str(limit)
 
-    return await _make_request("json/getStatsDatas", params)
+    # getStatsDatas は POST エンドポイントのため method="POST" とし、
+    # 本文にも同じ params を送る
+    return await _make_request(
+        "json/getStatsDatas",
+        params,
+        method="POST",
+        data=params,
+    )
