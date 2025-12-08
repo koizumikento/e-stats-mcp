@@ -1,12 +1,15 @@
 {
-  "command": "uv",
-  "args": [
-    "run",
-    "--directory",
-    "/path/to/e-stats-mcp",
-    "e-stats-mcp"
-  ],
-  "env": {
-    "E_STAT_APP_ID": "your-app-id"
+  "mcpServers": {
+    "e-stats-mcp": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/koizumikento/e-stats-mcp.git",
+        "e-stats-mcp"
+      ],
+      "env": {
+        "E_STAT_APP_ID": "your-app-id"
+      }
+    }
   }
 }
