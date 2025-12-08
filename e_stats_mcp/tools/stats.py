@@ -3,6 +3,8 @@
 e-Stat APIを使用した統計データの検索・取得ツール。
 """
 
+from typing import Any, cast
+
 import httpx
 
 from e_stats_mcp.settings import get_settings
@@ -19,7 +21,7 @@ async def _make_request(
     method: str = "GET",
     format: str = "json",
     data: dict | None = None,
-) -> dict | str:
+) -> dict[str, Any] | str:
     """e-Stat APIへのリクエストを実行する.
 
     Args:
@@ -105,7 +107,8 @@ async def get_stats_list(
         limit=limit,
     )
 
-    return await _make_request("json/getStatsList", params)
+    response = await _make_request("json/getStatsList", params)
+    return cast(dict[str, Any], response)
 
 
 def _build_stats_list_params(
@@ -163,7 +166,8 @@ async def get_meta_info(stats_data_id: str) -> dict:
         "statsDataId": stats_data_id,
     }
 
-    return await _make_request("json/getMetaInfo", params)
+    response = await _make_request("json/getMetaInfo", params)
+    return cast(dict[str, Any], response)
 
 
 async def get_stats_data(
@@ -239,7 +243,8 @@ async def get_stats_data(
         limit=limit,
     )
 
-    return await _make_request("json/getStatsData", params)
+    response = await _make_request("json/getStatsData", params)
+    return cast(dict[str, Any], response)
 
 
 def _build_stats_data_params(
@@ -357,11 +362,12 @@ async def get_stats_list_csv(
         updated_date=updated_date,
         limit=limit,
     )
-    return await _make_request(
+    response = await _make_request(
         "getSimpleStatsList",
         params,
         format="csv",
     )
+    return cast(str, response)
 
 
 async def get_meta_info_csv(stats_data_id: str) -> str:
@@ -370,11 +376,12 @@ async def get_meta_info_csv(stats_data_id: str) -> str:
         "lang": "J",
         "statsDataId": stats_data_id,
     }
-    return await _make_request(
+    response = await _make_request(
         "getSimpleMetaInfo",
         params,
         format="csv",
     )
+    return cast(str, response)
 
 
 async def get_stats_data_csv(
@@ -432,11 +439,12 @@ async def get_stats_data_csv(
         cnt_get_flg=cnt_get_flg,
         limit=limit,
     )
-    return await _make_request(
+    response = await _make_request(
         "getSimpleStatsData",
         params,
         format="csv",
     )
+    return cast(str, response)
 
 
 async def get_stats_data_bulk(
@@ -458,9 +466,10 @@ async def get_stats_data_bulk(
 
     # getStatsDatas は POST エンドポイントのため method="POST" とし、
     # 本文にも同じ params を送る
-    return await _make_request(
+    response = await _make_request(
         "json/getStatsDatas",
         params,
         method="POST",
         data=params,
     )
+    return cast(dict[str, Any], response)

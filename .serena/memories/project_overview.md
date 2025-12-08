@@ -1,0 +1,5 @@
+- 目的: e-Stat（政府統計の総合窓口）APIへアクセスするMCPサーバー。統計表検索、統計データ取得・一括取得、メタ情報、データセット登録/参照、データカタログ、分野コード一覧をツールとして提供。
+- 技術スタック: Python 3.11、fastmcp、httpx(AsyncClient)、pydantic-settings、uv + hatchlingビルド。非同期HTTPでJSON/CSV両対応。
+- 構成: `e_stats_mcp/main.py`でFastMCPを初期化し各ツールを登録。`tools/`に機能別モジュール（`stats.py`=検索/データ取得系と共通HTTP `_make_request`、`dataset.py`=postDataset/refDataset、`catalog.py`=データカタログ、`stats_fields.py`=分野コード定数）。`settings.py`は`pydantic-settings`+`lru_cache`で環境変数をロード。`tests/`は現状中身なし。
+- エントリポイント: `project.scripts`に`e-stats-mcp = e_stats_mcp:main`。`uv run e-stats-mcp`で起動。外部提供向けに`uvx --from git+... e-stats-mcp`もREADMEに記載。
+- 環境変数: `E_STAT_APP_ID`必須。未設定時はリクエスト前に`ValueError`。

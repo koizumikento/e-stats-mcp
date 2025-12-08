@@ -3,6 +3,8 @@
 e-Stat APIのデータセット登録(postDataset)・参照(refDataset)を扱う。
 """
 
+from typing import Any, cast
+
 from e_stats_mcp.tools.stats import _make_request
 
 
@@ -32,12 +34,13 @@ async def post_dataset(
     if conditions:
         params.update(conditions)
 
-    return await _make_request(
+    response = await _make_request(
         "postDataset",
         params,
         method="POST",
         data=params,
     )
+    return cast(dict[str, Any], response)
 
 
 async def get_dataset(
@@ -63,5 +66,6 @@ async def get_dataset(
     if limit:
         params["limit"] = str(limit)
 
-    return await _make_request("json/refDataset", params)
+    response = await _make_request("json/refDataset", params)
+    return cast(dict[str, Any], response)
 
