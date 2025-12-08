@@ -32,9 +32,9 @@ uv sync
 
 ## Configuration
 
-### API Key
+### Application ID
 
-e-Stat APIを使用するにはAPIキーが必要です。
+e-Stat APIを使用するにはアプリケーションIDが必要です。
 
 1. [e-Stat API](https://www.e-stat.go.jp/api/) にアクセス
 2. ユーザー登録・ログイン
@@ -123,7 +123,7 @@ Add to `.cursor/mcp.json` in your project root:
         "e-stats-mcp"
       ],
       "env": {
-        "E_STAT_API_KEY": "your-api-key"
+        "E_STAT_APP_ID": "your-app-id"
       }
     }
   }
