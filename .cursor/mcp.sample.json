@@ -1,0 +1,12 @@
+{
+  "command": "uv",
+  "args": [
+    "run",
+    "--directory",
+    "/path/to/e-stats-mcp",
+    "e-stats-mcp"
+  ],
+  "env": {
+    "E_STAT_API_KEY": "your-api-key"
+  }
+}
