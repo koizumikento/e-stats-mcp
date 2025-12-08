@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """環境変数設定."""
 
-    E_STAT_API_KEY: str
+    E_STAT_APP_ID: str
 
     model_config = SettingsConfigDict(env_prefix="", env_file=None, extra="ignore")
 

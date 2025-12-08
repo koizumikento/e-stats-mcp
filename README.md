@@ -43,7 +43,7 @@ e-Stat APIを使用するにはAPIキーが必要です。
 環境変数に設定:
 
 ```bash
-export E_STAT_API_KEY="your-api-key"
+export E_STAT_APP_ID="your-app-id"
 ```
 
 ## MCP Server Configuration
@@ -60,7 +60,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
     "e-stats-mcp": {
       "command": "e-stats-mcp",
       "env": {
-        "E_STAT_API_KEY": "your-api-key"
+        "E_STAT_APP_ID": "your-app-id"
       }
     }
   }
@@ -80,7 +80,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
         "e-stats-mcp"
       ],
       "env": {
-        "E_STAT_API_KEY": "your-api-key"
+        "E_STAT_APP_ID": "your-app-id"
       }
     }
   }
@@ -101,7 +101,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
         "e-stats-mcp"
       ],
       "env": {
-        "E_STAT_API_KEY": "your-api-key"
+        "E_STAT_APP_ID": "your-app-id"
       }
     }
   }

@@ -7,6 +7,6 @@
     "e-stats-mcp"
   ],
   "env": {
-    "E_STAT_API_KEY": "your-api-key"
+    "E_STAT_APP_ID": "your-app-id"
   }
 }

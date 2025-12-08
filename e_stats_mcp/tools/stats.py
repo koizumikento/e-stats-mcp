@@ -37,14 +37,14 @@ async def _make_request(
         httpx.HTTPError: API通信エラー
     """
     settings = get_settings()
-    if not settings.E_STAT_API_KEY:
+    if not settings.E_STAT_APP_ID:
         raise ValueError(
-            "E_STAT_API_KEY環境変数が設定されていません。"
-            "https://www.e-stat.go.jp/api/ からAPIキーを取得してください。"
+            "E_STAT_APP_ID環境変数が設定されていません。"
+            "https://www.e-stat.go.jp/api/ からアプリケーションIDを取得してください。"
         )
 
     url = f"{E_STAT_API_BASE}/{endpoint}"
-    request_params = {"appId": settings.E_STAT_API_KEY, **(params or {})}
+    request_params = {"appId": settings.E_STAT_APP_ID, **(params or {})}
     http_method = method.upper()
 
     async with httpx.AsyncClient() as client:
