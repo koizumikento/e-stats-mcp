@@ -1,0 +1,5 @@
+- コードは型ヒントと日本語Docstring付きの関数が基本。非同期`async def`でhttpx.AsyncClientを使い、CSV時はtext、JSON時はdictを返す。
+- 共通HTTP処理は`_make_request`に集約し、APIキー未設定時は明示的に例外を送出。タイムアウト/HTTPエラーはhttpx例外に委譲。
+- 環境設定は`pydantic-settings.BaseSettings`+`lru_cache`で一度だけロードするシンプル構成。
+- Lint/Typeチェックは`ruff`と`mypy`（設定ファイルなし=デフォルト挙動）。フォーマッタ指定は特に無し（必要なら`ruff format`利用可）。
+- 日本語コメント/Docstringを含むため文字列はUTF-8。外部公開API名はe-Statの命名に合わせてキャメル/スネークを混在せずsnake_case関数名。

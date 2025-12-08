@@ -1,0 +1,4 @@
+- 変更後は `uv run ruff check .` / `uv run mypy e_stats_mcp` / `uv run pytest` を通す。
+- 実行系変更時は`E_STAT_APP_ID`設定で`uv run e-stats-mcp`を起動確認すると安心。
+- READMEのコマンドやAPI説明を破壊していないか軽く確認。
+- 余計な依存追加やAPIキー漏洩がないか再チェックしてからコミット。

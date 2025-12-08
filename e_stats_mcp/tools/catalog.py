@@ -1,5 +1,7 @@
 """データカタログ情報取得ツール."""
 
+from typing import Any, cast
+
 from e_stats_mcp.tools.stats import _make_request
 
 
@@ -54,7 +56,8 @@ async def get_data_catalog(
     if limit:
         params["limit"] = str(limit)
 
-    return await _make_request("json/getDataCatalog", params)
+    response = await _make_request("json/getDataCatalog", params)
+    return cast(dict[str, Any], response)
 
 
 async def get_data_catalog_csv(
@@ -92,9 +95,10 @@ async def get_data_catalog_csv(
     if limit:
         params["limit"] = str(limit)
 
-    return await _make_request(
+    response = await _make_request(
         "getSimpleDataCatalog",
         params,
         format="csv",
     )
+    return cast(str, response)
 
