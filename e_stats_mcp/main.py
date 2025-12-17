@@ -4,6 +4,8 @@
 e-Stat API: https://www.e-stat.go.jp/api/
 """
 
+import sys
+
 from fastmcp import FastMCP
 
 from e_stats_mcp.tools import (
@@ -27,14 +29,14 @@ mcp = FastMCP(
     "e-stats-mcp",
     instructions="""
     e-Stat（政府統計の総合窓口）APIにアクセスするためのMCPサーバーです。
-    
+
     主な機能 (JSON/CSV 両対応):
     - 統計表情報の検索・取得
     - メタ情報の取得
     - 統計データの取得・一括取得
     - データセットの登録・参照
     - データカタログ情報の取得
-    
+
     使用にはe-Stat APIキー（E_STAT_API_KEY環境変数）が必要です。
     APIキーは https://www.e-stat.go.jp/api/ から取得できます。
     """,
@@ -57,8 +59,19 @@ mcp.tool()(get_stats_fields)
 
 
 def main() -> None:
-    """MCPサーバーを起動する."""
-    mcp.run()
+    """エントリポイント.
+
+    引数なし、または --mcp の場合はMCPサーバーを起動。
+    それ以外の引数がある場合はCLIモードを起動。
+    """
+    # 引数がない、または --mcp が指定された場合はMCPサーバーを起動
+    if len(sys.argv) == 1 or (len(sys.argv) == 2 and sys.argv[1] == "--mcp"):
+        mcp.run()
+    else:
+        # CLIモードを起動
+        from e_stats_mcp.cli import cli_main
+
+        cli_main()
 
 
 if __name__ == "__main__":

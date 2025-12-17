@@ -4,6 +4,7 @@
 """
 
 from e_stats_mcp.main import main, mcp
+from e_stats_mcp.cli import cli_main
 
-__all__ = ["main", "mcp"]
+__all__ = ["main", "mcp", "cli_main"]
 
