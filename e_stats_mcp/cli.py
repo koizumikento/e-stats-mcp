@@ -169,6 +169,13 @@ def stats_data_command(
 
 @app.command("data-bulk")
 def stats_data_bulk_command(
+    request_json: Annotated[
+        Optional[str],
+        typer.Option(
+            "--request-json",
+            help="statsDatasSpec用の取得条件リストJSON。--ids/--datasetsより優先",
+        ),
+    ] = None,
     stats_data_ids: Annotated[
         Optional[str],
         typer.Option("--ids", "-i", help="統計表IDリスト（カンマ区切り）"),
@@ -180,11 +187,15 @@ def stats_data_bulk_command(
     limit: Annotated[Optional[int], typer.Option("--limit", "-l", help="取得件数")] = None,
 ) -> None:
     """複数の統計表/データセットから統計データを一括取得する."""
+    requests = json.loads(request_json) if request_json else None
     ids_list = stats_data_ids.split(",") if stats_data_ids else None
     datasets_list = dataset_ids.split(",") if dataset_ids else None
     result = asyncio.run(
         get_stats_data_bulk(
-            stats_data_ids=ids_list, dataset_ids=datasets_list, limit=limit
+            requests=requests,
+            stats_data_ids=ids_list,
+            dataset_ids=datasets_list,
+            limit=limit,
         )
     )
     _print_json(result)
@@ -197,16 +208,18 @@ def stats_data_bulk_command(
 def post_dataset_command(
     name: Annotated[str, typer.Option("--name", "-n", help="データセット名")],
     stats_data_id: Annotated[str, typer.Option("--id", "-i", help="統計表ID")],
-    description: Annotated[
-        Optional[str], typer.Option("--desc", "-d", help="説明文")
+    conditions_json: Annotated[
+        Optional[str],
+        typer.Option("--conditions-json", help="絞り込み条件のJSON"),
     ] = None,
 ) -> None:
     """データセットを登録する."""
+    conditions = json.loads(conditions_json) if conditions_json else None
     result = asyncio.run(
         post_dataset(
             dataset_name=name,
             stats_data_id=stats_data_id,
-            description=description,
+            conditions=conditions,
         )
     )
     _print_json(result)

@@ -3,7 +3,9 @@
 e-Stat APIを使用した統計データの検索・取得ツール。
 """
 
+import json
 from typing import Any, cast
+import xml.etree.ElementTree as ET
 
 import httpx
 
@@ -12,6 +14,16 @@ from e_stats_mcp.settings import get_settings
 # e-Stat API設定
 E_STAT_API_BASE = "https://api.e-stat.go.jp/rest/3.0/app"
 DEFAULT_TIMEOUT = 30.0
+SUCCESS_STATUSES = {"0", "1", "2"}
+
+
+class EStatAPIError(ValueError):
+    """e-Stat APIの業務エラー."""
+
+    def __init__(self, status: str, message: str) -> None:
+        self.status = status
+        self.message = message
+        super().__init__(f"e-Stat API error {status}: {message}")
 
 
 async def _make_request(
@@ -51,8 +63,9 @@ async def _make_request(
 
     async with httpx.AsyncClient() as client:
         if http_method == "POST":
+            request_data = {**request_params, **(data or {})}
             response = await client.post(
-                url, params=request_params, data=data, timeout=DEFAULT_TIMEOUT
+                url, data=request_data, timeout=DEFAULT_TIMEOUT
             )
         else:
             response = await client.get(
@@ -61,8 +74,81 @@ async def _make_request(
 
         response.raise_for_status()
         if format == "csv":
+            _raise_for_xml_error(response.text)
             return response.text
-        return response.json()
+        if format == "xml":
+            return response.text
+
+        result = response.json()
+        _raise_for_api_error(result)
+        return result
+
+
+def _raise_for_api_error(response: dict[str, Any]) -> None:
+    """JSONレスポンス内のe-Stat業務エラーを検査する."""
+    result = _find_result(response)
+    if not result:
+        return
+
+    status = str(result.get("STATUS", ""))
+    if status and status not in SUCCESS_STATUSES:
+        message = str(result.get("ERROR_MSG") or "API request failed")
+        raise EStatAPIError(status, message)
+
+
+def _find_result(value: Any) -> dict[str, Any] | None:
+    """ネストしたJSONレスポンスから最初のRESULTを探す."""
+    if isinstance(value, dict):
+        result = value.get("RESULT")
+        if isinstance(result, dict):
+            return result
+        for child in value.values():
+            found = _find_result(child)
+            if found:
+                return found
+    elif isinstance(value, list):
+        for child in value:
+            found = _find_result(child)
+            if found:
+                return found
+    return None
+
+
+def _raise_for_xml_error(text: str) -> None:
+    """XML本文内のe-Stat業務エラーを検査する."""
+    xml_text = text.lstrip()
+    if not xml_text.startswith("<"):
+        return
+
+    try:
+        root = ET.fromstring(xml_text)
+    except ET.ParseError:
+        return
+
+    status = _find_xml_text(root, "STATUS")
+    if status and status not in SUCCESS_STATUSES:
+        message = _find_xml_text(root, "ERROR_MSG") or "API request failed"
+        raise EStatAPIError(status, message)
+
+
+def _find_xml_text(root: ET.Element, tag: str) -> str | None:
+    """名前空間を無視してXMLタグのテキストを探す."""
+    for element in root.iter():
+        if _strip_namespace(element.tag) == tag:
+            return element.text or ""
+    return None
+
+
+def _strip_namespace(tag: str) -> str:
+    """XMLタグ名から名前空間を除く."""
+    return tag.rsplit("}", 1)[-1]
+
+
+def _validate_positive_int(name: str, value: int) -> int:
+    """e-Statの1始まり/正数パラメータを検査する."""
+    if value < 1:
+        raise ValueError(f"{name}は1以上を指定してください。")
+    return value
 
 
 async def get_stats_list(
@@ -127,7 +213,7 @@ def _build_stats_list_params(
     """getStatsList系の共通パラメータを組み立てる."""
     params = {
         "lang": "J",
-        "limit": str(min(limit, 100)),
+        "limit": str(min(_validate_positive_int("limit", limit), 100)),
     }
 
     if search_word:
@@ -144,8 +230,10 @@ def _build_stats_list_params(
         params["openYears"] = open_years
     if stats_name_list:
         params["statsNameList"] = stats_name_list
-    if start_position:
-        params["startPosition"] = str(start_position)
+    if start_position is not None:
+        params["startPosition"] = str(
+            _validate_positive_int("start_position", start_position)
+        )
     if updated_date:
         params["updatedDate"] = updated_date
 
@@ -193,7 +281,7 @@ async def get_stats_data(
     cdtime: str | None = None,
     cdarea: str | None = None,
     start_position: int | None = None,
-    section_header_flg: bool = False,
+    section_header_flg: bool | None = None,
     cnt_get_flg: bool = False,
     limit: int = 100,
 ) -> dict:
@@ -208,7 +296,7 @@ async def get_stats_data(
         cdtime: 時間軸コード（絞り込み用）
         cdarea: 地域コード（絞り込み用）
         start_position: データ取得開始位置
-        section_header_flg: セクションヘッダ出力フラグ（Trueで有効）
+        section_header_flg: セクションヘッダ出力フラグ（Trueで出力、Falseで非出力）
         cnt_get_flg: 件数取得フラグ（Trueで有効）
         limit: 取得件数（デフォルト100件）
 
@@ -271,7 +359,7 @@ def _build_stats_data_params(
     cdtime: str | None = None,
     cdarea: str | None = None,
     start_position: int | None = None,
-    section_header_flg: bool = False,
+    section_header_flg: bool | None = None,
     cnt_get_flg: bool = False,
     limit: int = 100,
 ) -> dict:
@@ -279,7 +367,7 @@ def _build_stats_data_params(
     params = {
         "lang": "J",
         "statsDataId": stats_data_id,
-        "limit": str(limit),
+        "limit": str(_validate_positive_int("limit", limit)),
     }
 
     if cdcat01:
@@ -312,12 +400,14 @@ def _build_stats_data_params(
         params["cdTime"] = cdtime
     if cdarea:
         params["cdArea"] = cdarea
-    if start_position:
-        params["startPosition"] = str(start_position)
-    if section_header_flg:
-        params["sectionHeaderFlg"] = "1"
+    if start_position is not None:
+        params["startPosition"] = str(
+            _validate_positive_int("start_position", start_position)
+        )
+    if section_header_flg is not None:
+        params["sectionHeaderFlg"] = "1" if section_header_flg else "2"
     if cnt_get_flg:
-        params["cntGetFlg"] = "1"
+        params["cntGetFlg"] = "Y"
 
     return params
 
@@ -407,7 +497,7 @@ async def get_stats_data_csv(
     cdtime: str | None = None,
     cdarea: str | None = None,
     start_position: int | None = None,
-    section_header_flg: bool = False,
+    section_header_flg: bool | None = None,
     cnt_get_flg: bool = False,
     limit: int = 100,
 ) -> str:
@@ -448,28 +538,82 @@ async def get_stats_data_csv(
 
 
 async def get_stats_data_bulk(
+    requests: list[dict[str, Any]] | None = None,
     stats_data_ids: list[str] | None = None,
     dataset_ids: list[str] | None = None,
     start_position: int | None = None,
     limit: int | None = None,
 ) -> dict:
-    """複数の統計表ID/データセットIDから統計データを一括取得する."""
-    params: dict = {"lang": "J"}
-    if stats_data_ids:
-        params["statsDataId"] = ",".join(stats_data_ids)
-    if dataset_ids:
-        params["datasetId"] = ",".join(dataset_ids)
-    if start_position:
-        params["startPosition"] = str(start_position)
-    if limit:
-        params["limit"] = str(limit)
+    """複数の統計表ID/データセットIDから統計データを一括取得する.
 
-    # getStatsDatas は POST エンドポイントのため method="POST" とし、
-    # 本文にも同じ params を送る
+    Args:
+        requests: statsDatasSpecに入れる取得条件のリスト
+        stats_data_ids: 後方互換用の統計表IDリスト
+        dataset_ids: 後方互換用のデータセットIDリスト
+        start_position: 後方互換用のデータ取得開始位置
+        limit: 後方互換用の取得件数
+    """
+    stats_datas_spec = (
+        _validate_bulk_requests(requests)
+        if requests is not None
+        else _build_bulk_requests(
+            stats_data_ids=stats_data_ids,
+            dataset_ids=dataset_ids,
+            start_position=start_position,
+            limit=limit,
+        )
+    )
+    if not stats_datas_spec:
+        raise ValueError("requests、stats_data_ids、dataset_idsのいずれかを指定してください。")
+
+    params: dict[str, str] = {"lang": "J"}
+    data = {
+        "statsDatasSpec": json.dumps(stats_datas_spec, ensure_ascii=False),
+    }
+
     response = await _make_request(
         "json/getStatsDatas",
         params,
         method="POST",
-        data=params,
+        data=data,
     )
     return cast(dict[str, Any], response)
+
+
+def _validate_bulk_requests(requests: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """statsDatasSpec用リクエスト配列の最低限の形を検査する."""
+    if not isinstance(requests, list):
+        raise ValueError("requestsは取得条件dictのリストで指定してください。")
+    for index, request in enumerate(requests, start=1):
+        if not isinstance(request, dict):
+            raise ValueError(f"requests[{index}]はdictで指定してください。")
+        if not (request.get("statsDataId") or request.get("dataSetId")):
+            raise ValueError(
+                f"requests[{index}]にはstatsDataIdまたはdataSetIdが必要です。"
+            )
+    return requests
+
+
+def _build_bulk_requests(
+    *,
+    stats_data_ids: list[str] | None = None,
+    dataset_ids: list[str] | None = None,
+    start_position: int | None = None,
+    limit: int | None = None,
+) -> list[dict[str, Any]]:
+    """旧形式の入力からstatsDatasSpec用リクエストを作る."""
+    requests: list[dict[str, Any]] = []
+    common: dict[str, Any] = {}
+    if start_position is not None:
+        common["startPosition"] = _validate_positive_int(
+            "start_position", start_position
+        )
+    if limit is not None:
+        common["limit"] = _validate_positive_int("limit", limit)
+
+    for stats_data_id in stats_data_ids or []:
+        requests.append({"statsDataId": stats_data_id, **common})
+    for dataset_id in dataset_ids or []:
+        requests.append({"dataSetId": dataset_id, **common})
+
+    return requests

@@ -144,7 +144,7 @@ Add to `.cursor/mcp.json` in your project root:
 ### 統計データ取得
 
 - `get_stats_data` / `get_stats_data_csv` - 統計データを取得
-- `get_stats_data_bulk` - 複数ID/データセットの一括取得
+- `get_stats_data_bulk` - statsDatasSpec形式で複数ID/データセットを一括取得
 
 ### データセット
 
@@ -193,8 +193,16 @@ Arguments: {"stats_data_id": "0003411001", "limit": 50}
 
 ```bash
 Tool: get_stats_data_bulk
-Arguments: {"stats_data_ids": ["0003411001", "0003411002"], "limit": 100}
+Arguments: {
+  "requests": [
+    {"statsDataId": "0003411001", "limit": 100},
+    {"statsDataId": "0003411002", "limit": 100}
+  ]
+}
 ```
+
+`stats_data_ids` / `dataset_ids` も後方互換用に利用できますが、e-Stat APIには内部で
+`statsDatasSpec` JSON文字列として送信されます。
 
 ### メタ情報を取得
 
@@ -213,6 +221,9 @@ Arguments: {
   "conditions": {"cdCat01": "000"}
 }
 ```
+
+`postDataset` はe-Stat API側の応答がXMLのみのため、このMCPではXMLをdictに変換して返します。
+APIの業務エラーは通常データではなくツールエラーとして扱います。
 
 ### データカタログ情報をCSVで取得
 

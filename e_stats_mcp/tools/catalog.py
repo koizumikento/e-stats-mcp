@@ -2,7 +2,7 @@
 
 from typing import Any, cast
 
-from e_stats_mcp.tools.stats import _make_request
+from e_stats_mcp.tools.stats import _make_request, _validate_positive_int
 
 
 async def get_data_catalog(
@@ -51,10 +51,12 @@ async def get_data_catalog(
         params["statsNameList"] = stats_name_list
     if updated_date:
         params["updatedDate"] = updated_date
-    if start_position:
-        params["startPosition"] = str(start_position)
-    if limit:
-        params["limit"] = str(limit)
+    if start_position is not None:
+        params["startPosition"] = str(
+            _validate_positive_int("start_position", start_position)
+        )
+    if limit is not None:
+        params["limit"] = str(_validate_positive_int("limit", limit))
 
     response = await _make_request("json/getDataCatalog", params)
     return cast(dict[str, Any], response)
@@ -90,10 +92,12 @@ async def get_data_catalog_csv(
         params["statsNameList"] = stats_name_list
     if updated_date:
         params["updatedDate"] = updated_date
-    if start_position:
-        params["startPosition"] = str(start_position)
-    if limit:
-        params["limit"] = str(limit)
+    if start_position is not None:
+        params["startPosition"] = str(
+            _validate_positive_int("start_position", start_position)
+        )
+    if limit is not None:
+        params["limit"] = str(_validate_positive_int("limit", limit))
 
     response = await _make_request(
         "getSimpleDataCatalog",

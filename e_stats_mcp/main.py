@@ -37,7 +37,7 @@ mcp = FastMCP(
     - データセットの登録・参照
     - データカタログ情報の取得
 
-    使用にはe-Stat APIキー（E_STAT_API_KEY環境変数）が必要です。
+    使用にはe-Stat アプリケーションID（E_STAT_APP_ID環境変数）が必要です。
     APIキーは https://www.e-stat.go.jp/api/ から取得できます。
     """,
 )
