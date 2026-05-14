@@ -108,6 +108,37 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 }
 ```
 
+### Codex
+
+Add to `~/.codex/config.toml`:
+
+**Direct from GitHub:**
+
+```toml
+[mcp_servers.e-stats-mcp]
+command = "uvx"
+args = [
+  "--from",
+  "git+https://github.com/koizumikento/e-stats-mcp.git",
+  "e-stats-mcp",
+]
+env = { E_STAT_APP_ID = "your-app-id" }
+```
+
+**Local development:**
+
+```toml
+[mcp_servers.e-stats-mcp]
+command = "uv"
+args = [
+  "run",
+  "--directory",
+  "/path/to/e-stats-mcp",
+  "e-stats-mcp",
+]
+env = { E_STAT_APP_ID = "your-app-id" }
+```
+
 ### Cursor
 
 Add to `.cursor/mcp.json` in your project root:
