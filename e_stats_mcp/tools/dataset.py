@@ -191,7 +191,7 @@ async def get_dataset(
     """
     params: dict = {}
     if dataset_id:
-        params["datasetId"] = dataset_id
+        params["dataSetId"] = dataset_id
     if start_position is not None:
         params["startPosition"] = str(
             _validate_positive_int("start_position", start_position)
@@ -201,4 +201,3 @@ async def get_dataset(
 
     response = await _make_request("json/refDataset", params)
     return cast(dict[str, Any], response)
-

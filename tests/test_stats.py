@@ -401,12 +401,84 @@ async def test_get_dataset_params_reject_invalid_paging(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_get_dataset_maps_params_to_ref_dataset(monkeypatch):
+    monkeypatch.setenv("E_STAT_APP_ID", "dummy")
+    response = DummyResponse(json_data={"REF_DATASET": {"RESULT": {"STATUS": 0}}})
+    client = DummyClient(response)
+
+    def factory(*args, **kwargs):
+        return client
+
+    monkeypatch.setattr(stats.httpx, "AsyncClient", factory)
+
+    result = await dataset.get_dataset(
+        dataset_id="CTCdemo-kokusei1",
+        start_position=1,
+        limit=1,
+    )
+
+    assert result == {"REF_DATASET": {"RESULT": {"STATUS": 0}}}
+    method, url, params, data, timeout = client.calls[0]
+    assert method == "GET"
+    assert url == f"{stats.E_STAT_API_BASE}/json/refDataset"
+    assert params == {
+        "appId": "dummy",
+        "dataSetId": "CTCdemo-kokusei1",
+        "startPosition": "1",
+        "limit": "1",
+    }
+    assert data is None
+    assert timeout == stats.DEFAULT_TIMEOUT
+
+
+@pytest.mark.asyncio
 async def test_data_catalog_params_reject_invalid_paging(monkeypatch):
     monkeypatch.setenv("E_STAT_APP_ID", "dummy")
     with pytest.raises(ValueError, match="limit"):
         await catalog.get_data_catalog(limit=0)
     with pytest.raises(ValueError, match="start_position"):
         await catalog.get_data_catalog_csv(start_position=0)
+
+
+@pytest.mark.asyncio
+async def test_get_data_catalog_csv_uses_json_endpoint_and_converts(monkeypatch):
+    monkeypatch.setenv("E_STAT_APP_ID", "dummy")
+    response = DummyResponse(
+        json_data={
+            "GET_DATA_CATALOG": {
+                "RESULT": {"STATUS": 0},
+                "DATA_CATALOG_LIST_INF": {
+                    "DATA_CATALOG_INF": [
+                        {
+                            "STAT_NAME": {"@code": "00200524", "$": "国勢調査"},
+                            "TITLE": "sample, title",
+                            "DATA_FORMAT": "XLS",
+                        }
+                    ]
+                },
+            }
+        }
+    )
+    client = DummyClient(response)
+
+    def factory(*args, **kwargs):
+        return client
+
+    monkeypatch.setattr(stats.httpx, "AsyncClient", factory)
+
+    result = await catalog.get_data_catalog_csv(stats_code="00200524", limit=1)
+
+    method, url, params, data, timeout = client.calls[0]
+    assert method == "GET"
+    assert url == f"{stats.E_STAT_API_BASE}/json/getDataCatalog"
+    assert params == {"appId": "dummy", "statsCode": "00200524", "limit": "1"}
+    assert data is None
+    assert timeout == stats.DEFAULT_TIMEOUT
+
+    assert "DATA_FORMAT" in result
+    assert "STAT_NAME.$" in result
+    assert "STAT_NAME.@code" in result
+    assert '"sample, title"' in result
 
 
 def test_parse_post_dataset_xml_ignores_namespaces():

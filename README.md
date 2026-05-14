@@ -233,6 +233,9 @@ Tool: get_data_catalog_csv
 Arguments: {"search_word": "人口", "limit": 20}
 ```
 
+e-Stat API 3.0にはデータカタログ取得のCSVエンドポイントがないため、MCP側で
+JSON版 `getDataCatalog` の `DATA_CATALOG_INF` をCSVへ変換して返します。
+
 ### 統計分野コード一覧を取得
 
 ```bash
