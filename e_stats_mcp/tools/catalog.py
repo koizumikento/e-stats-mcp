@@ -147,7 +147,15 @@ async def get_data_catalog_csv(
             search_word=search_word,
             matched_count_hint=None,
         )
-    return _data_catalog_response_to_csv(cast(dict[str, Any], response))
+    result = cast(dict[str, Any], response)
+    guidance = _get_broad_catalog_guidance(result, params)
+    csv_text = _data_catalog_response_to_csv(result)
+    if guidance is None:
+        return csv_text
+    return {
+        "csv": csv_text,
+        CATALOG_GUIDANCE_KEY: guidance,
+    }
 
 
 def _add_broad_catalog_guidance(
@@ -155,18 +163,29 @@ def _add_broad_catalog_guidance(
     params: dict[str, str],
 ) -> dict[str, Any]:
     """広すぎるデータカタログ検索に次アクションのヒントを追加する."""
-    matched_count = _get_data_catalog_matched_count(response)
-    if matched_count is None or matched_count < BROAD_CATALOG_MATCH_THRESHOLD:
-        return response
-    if not _is_broad_catalog_search(params):
+    guidance = _get_broad_catalog_guidance(response, params)
+    if guidance is None:
         return response
 
-    response[CATALOG_GUIDANCE_KEY] = _build_data_catalog_recovery_error(
+    response[CATALOG_GUIDANCE_KEY] = guidance
+    return response
+
+
+def _get_broad_catalog_guidance(
+    response: dict[str, Any],
+    params: dict[str, str],
+) -> dict[str, Any] | None:
+    matched_count = _get_data_catalog_matched_count(response)
+    if matched_count is None or matched_count < BROAD_CATALOG_MATCH_THRESHOLD:
+        return None
+    if not _is_broad_catalog_search(params):
+        return None
+
+    return _build_data_catalog_recovery_error(
         code="DATA_CATALOG_QUERY_TOO_BROAD",
         search_word=params.get("searchWord"),
         matched_count_hint=matched_count,
     )
-    return response
 
 
 def _is_broad_catalog_search(params: dict[str, str]) -> bool:

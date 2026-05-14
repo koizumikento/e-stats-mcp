@@ -524,6 +524,38 @@ async def test_get_data_catalog_csv_uses_json_endpoint_and_converts(monkeypatch)
 
 
 @pytest.mark.asyncio
+async def test_get_data_catalog_csv_adds_guidance_for_broad_search(monkeypatch):
+    monkeypatch.setenv("E_STAT_APP_ID", "dummy")
+    response = DummyResponse(
+        json_data={
+            "GET_DATA_CATALOG": {
+                "RESULT": {"STATUS": 0},
+                "DATA_CATALOG_LIST_INF": {
+                    "NUMBER": 9912,
+                    "DATA_CATALOG_INF": [{"TITLE": "交通事故の発生状況"}],
+                },
+            }
+        }
+    )
+    client = DummyClient(response)
+
+    def factory(*args, **kwargs):
+        return client
+
+    monkeypatch.setattr(stats.httpx, "AsyncClient", factory)
+
+    result = await catalog.get_data_catalog_csv(search_word="人口", limit=1)
+
+    assert isinstance(result, dict)
+    assert "TITLE" in result["csv"]
+    guidance = result[catalog.CATALOG_GUIDANCE_KEY]
+    assert guidance["code"] == "DATA_CATALOG_QUERY_TOO_BROAD"
+    assert guidance["retryable"] is True
+    assert guidance["matched_count_hint"] == 9912
+    assert guidance["suggested_next_calls"][0]["tool"] == "get_stats_list"
+
+
+@pytest.mark.asyncio
 async def test_get_data_catalog_adds_guidance_for_broad_search(monkeypatch):
     monkeypatch.setenv("E_STAT_APP_ID", "dummy")
     response = DummyResponse(

@@ -194,6 +194,8 @@ Add to `.cursor/mcp.json` in your project root:
 絞ってから `get_data_catalog` を呼ぶのがおすすめです。広すぎる検索や upstream timeout では、
 MCPクライアントが自己修正しやすいように `MCP_GUIDANCE` または `structuredContent.error` に
 次に試すべき呼び出しを含めて返します。
+`get_data_catalog_csv` も広すぎる検索ではCSV文字列だけでなく、`csv` と `MCP_GUIDANCE` を含む
+JSONオブジェクトを返します。
 
 ### 分野コード
 
