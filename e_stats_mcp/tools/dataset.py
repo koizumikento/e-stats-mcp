@@ -3,6 +3,7 @@
 e-Stat APIのデータセット登録(postDataset)・参照(refDataset)を扱う。
 """
 
+from copy import deepcopy
 from typing import Any, cast
 import xml.etree.ElementTree as ET
 
@@ -189,15 +190,68 @@ async def get_dataset(
     Returns:
         データセット情報
     """
+    validated_start_position = (
+        _validate_positive_int("start_position", start_position)
+        if start_position is not None
+        else None
+    )
+    validated_limit = (
+        _validate_positive_int("limit", limit) if limit is not None else None
+    )
+
     params: dict = {}
     if dataset_id:
         params["dataSetId"] = dataset_id
-    if start_position is not None:
-        params["startPosition"] = str(
-            _validate_positive_int("start_position", start_position)
-        )
-    if limit is not None:
-        params["limit"] = str(_validate_positive_int("limit", limit))
 
     response = await _make_request("json/refDataset", params)
-    return cast(dict[str, Any], response)
+    result = cast(dict[str, Any], response)
+    if dataset_id:
+        return result
+    return _apply_dataset_list_paging(
+        result,
+        start_position=validated_start_position,
+        limit=validated_limit,
+    )
+
+
+def _apply_dataset_list_paging(
+    response: dict[str, Any],
+    *,
+    start_position: int | None,
+    limit: int | None,
+) -> dict[str, Any]:
+    """refDataset一覧取得にMCP側ページングを適用する."""
+    if start_position is None and limit is None:
+        return response
+
+    paged_response = deepcopy(response)
+    root = paged_response.get("GET_DATASET_LIST")
+    if not isinstance(root, dict):
+        return paged_response
+
+    list_info = root.get("DATASET_LIST_INF")
+    if not isinstance(list_info, dict):
+        return paged_response
+
+    records = _ensure_list(list_info.get("DATASET_INF", []))
+    start_index = (start_position or 1) - 1
+    end_index = start_index + limit if limit is not None else None
+    paged_records = records[start_index:end_index]
+
+    list_info["DATASET_INF"] = paged_records
+    list_info["NUMBER"] = len(paged_records)
+
+    parameter = root.setdefault("PARAMETER", {})
+    if isinstance(parameter, dict):
+        if start_position is not None:
+            parameter["START_POSITION"] = str(start_position)
+        if limit is not None:
+            parameter["LIMIT"] = str(limit)
+
+    return paged_response
+
+
+def _ensure_list(value: Any) -> list[Any]:
+    if value in (None, ""):
+        return []
+    return value if isinstance(value, list) else [value]

@@ -424,11 +424,49 @@ async def test_get_dataset_maps_params_to_ref_dataset(monkeypatch):
     assert params == {
         "appId": "dummy",
         "dataSetId": "CTCdemo-kokusei1",
-        "startPosition": "1",
-        "limit": "1",
     }
     assert data is None
     assert timeout == stats.DEFAULT_TIMEOUT
+
+
+@pytest.mark.asyncio
+async def test_get_dataset_applies_list_paging_locally(monkeypatch):
+    monkeypatch.setenv("E_STAT_APP_ID", "dummy")
+    response = DummyResponse(
+        json_data={
+            "GET_DATASET_LIST": {
+                "RESULT": {"STATUS": 0},
+                "PARAMETER": {"LANG": "J", "DATA_FORMAT": "J"},
+                "DATASET_LIST_INF": {
+                    "NUMBER": 20,
+                    "DATASET_INF": [
+                        {"DATASET_ID": "ds1"},
+                        {"DATASET_ID": "ds2"},
+                    ],
+                },
+            }
+        }
+    )
+    client = DummyClient(response)
+
+    def factory(*args, **kwargs):
+        return client
+
+    monkeypatch.setattr(stats.httpx, "AsyncClient", factory)
+
+    result = await dataset.get_dataset(start_position=1, limit=1)
+
+    method, url, params, data, _ = client.calls[0]
+    assert method == "GET"
+    assert url == f"{stats.E_STAT_API_BASE}/json/refDataset"
+    assert params == {"appId": "dummy"}
+    assert data is None
+
+    dataset_list = result["GET_DATASET_LIST"]
+    assert dataset_list["PARAMETER"]["START_POSITION"] == "1"
+    assert dataset_list["PARAMETER"]["LIMIT"] == "1"
+    assert dataset_list["DATASET_LIST_INF"]["NUMBER"] == 1
+    assert dataset_list["DATASET_LIST_INF"]["DATASET_INF"] == [{"DATASET_ID": "ds1"}]
 
 
 @pytest.mark.asyncio

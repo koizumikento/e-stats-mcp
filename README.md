@@ -151,6 +151,9 @@ Add to `.cursor/mcp.json` in your project root:
 - `post_dataset` - データセット登録（postDataset）
 - `get_dataset` - データセット参照（refDataset）
 
+`refDataset` はAPI側に一覧取得用の `limit` / `startPosition` がないため、
+`get_dataset` でデータセット一覧を取得する場合の `limit` / `start_position` はMCP側で適用されます。
+
 ### データカタログ
 
 - `get_data_catalog` / `get_data_catalog_csv` - データカタログ情報を取得
