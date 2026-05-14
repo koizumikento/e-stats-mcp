@@ -208,7 +208,7 @@ async def test_get_stats_data_bulk_posts_stats_datas_spec(monkeypatch):
     assert data["appId"] == "dummy"
     assert data["lang"] == "J"
     assert json.loads(data["statsDatasSpec"]) == [
-        {"statsDataId": "0001", "limit": 10},
+        {"statsDataId": "0001", "limit": "10"},
         {"dataSetId": "dataset-1", "cdArea": "13000"},
     ]
     assert timeout == stats.DEFAULT_TIMEOUT
@@ -225,12 +225,17 @@ async def test_get_stats_data_bulk_keeps_legacy_id_inputs(monkeypatch):
 
     monkeypatch.setattr(stats.httpx, "AsyncClient", factory)
 
-    await stats.get_stats_data_bulk(stats_data_ids=["0001"], dataset_ids=["ds1"], limit=5)
+    await stats.get_stats_data_bulk(
+        stats_data_ids=["0001"],
+        dataset_ids=["ds1"],
+        start_position=1,
+        limit=5,
+    )
 
     _, _, _, data, _ = client.calls[0]
     assert json.loads(data["statsDatasSpec"]) == [
-        {"statsDataId": "0001", "limit": 5},
-        {"dataSetId": "ds1", "limit": 5},
+        {"statsDataId": "0001", "startPosition": "1", "limit": "5"},
+        {"dataSetId": "ds1", "startPosition": "1", "limit": "5"},
     ]
 
 
@@ -239,6 +244,35 @@ async def test_get_stats_data_bulk_rejects_malformed_requests(monkeypatch):
     monkeypatch.setenv("E_STAT_APP_ID", "dummy")
     with pytest.raises(ValueError, match="statsDataId"):
         await stats.get_stats_data_bulk(requests=[{"limit": 5}])
+    with pytest.raises(ValueError, match="どちらか一方"):
+        await stats.get_stats_data_bulk(
+            requests=[{"statsDataId": "0001", "dataSetId": "ds1"}]
+        )
+    with pytest.raises(ValueError, match="1以上"):
+        await stats.get_stats_data_bulk(requests=[{"statsDataId": "0001", "limit": 0}])
+    with pytest.raises(ValueError, match="1以上"):
+        await stats.get_stats_data_bulk(
+            requests=[{"statsDataId": "0001", "limit": 1.5}]
+        )
+
+
+@pytest.mark.asyncio
+async def test_get_stats_data_bulk_omits_empty_request_values(monkeypatch):
+    monkeypatch.setenv("E_STAT_APP_ID", "dummy")
+    response = DummyResponse(json_data={"GET_STATS_DATAS": {"RESULT": {"STATUS": 0}}})
+    client = DummyClient(response)
+
+    def factory(*args, **kwargs):
+        return client
+
+    monkeypatch.setattr(stats.httpx, "AsyncClient", factory)
+
+    await stats.get_stats_data_bulk(
+        requests=[{"statsDataId": "", "dataSetId": "ds1", "cdArea": ""}]
+    )
+
+    _, _, _, data, _ = client.calls[0]
+    assert json.loads(data["statsDatasSpec"]) == [{"dataSetId": "ds1"}]
 
 
 @pytest.mark.asyncio
@@ -418,4 +452,3 @@ async def test_post_dataset_raises_for_xml_error(monkeypatch):
 
     with pytest.raises(stats.EStatAPIError, match="100"):
         await dataset.post_dataset(dataset_name="sample", stats_data_id="0001")
-

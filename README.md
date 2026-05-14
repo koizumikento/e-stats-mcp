@@ -195,14 +195,15 @@ Arguments: {"stats_data_id": "0003411001", "limit": 50}
 Tool: get_stats_data_bulk
 Arguments: {
   "requests": [
-    {"statsDataId": "0003411001", "limit": 100},
-    {"statsDataId": "0003411002", "limit": 100}
+    {"statsDataId": "0003411001", "limit": "100"},
+    {"statsDataId": "0003411002", "limit": "100"}
   ]
 }
 ```
 
 `stats_data_ids` / `dataset_ids` も後方互換用に利用できますが、e-Stat APIには内部で
-`statsDatasSpec` JSON文字列として送信されます。
+`statsDatasSpec` JSON文字列として送信されます。`limit` / `startPosition` はMCP側で
+e-Stat APIが受け付ける文字列形式に正規化されます。
 
 ### メタ情報を取得
 

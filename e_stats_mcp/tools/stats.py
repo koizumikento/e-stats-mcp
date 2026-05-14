@@ -564,7 +564,9 @@ async def get_stats_data_bulk(
         )
     )
     if not stats_datas_spec:
-        raise ValueError("requests、stats_data_ids、dataset_idsのいずれかを指定してください。")
+        raise ValueError(
+            "requests、stats_data_ids、dataset_idsのいずれかを指定してください。"
+        )
 
     params: dict[str, str] = {"lang": "J"}
     data = {
@@ -584,14 +586,47 @@ def _validate_bulk_requests(requests: list[dict[str, Any]]) -> list[dict[str, An
     """statsDatasSpec用リクエスト配列の最低限の形を検査する."""
     if not isinstance(requests, list):
         raise ValueError("requestsは取得条件dictのリストで指定してください。")
+    normalized_requests: list[dict[str, Any]] = []
     for index, request in enumerate(requests, start=1):
         if not isinstance(request, dict):
             raise ValueError(f"requests[{index}]はdictで指定してください。")
-        if not (request.get("statsDataId") or request.get("dataSetId")):
+        normalized_request = _normalize_bulk_request(request, index)
+        has_stats_data_id = "statsDataId" in normalized_request
+        has_dataset_id = "dataSetId" in normalized_request
+        if has_stats_data_id == has_dataset_id:
             raise ValueError(
-                f"requests[{index}]にはstatsDataIdまたはdataSetIdが必要です。"
+                f"requests[{index}]にはstatsDataIdまたはdataSetIdのどちらか一方が必要です。"
             )
-    return requests
+        normalized_requests.append(normalized_request)
+    return normalized_requests
+
+
+def _normalize_bulk_request(request: dict[str, Any], index: int) -> dict[str, Any]:
+    """statsDatasSpecに入れる値をe-Stat APIが受け付ける文字列形式へ寄せる."""
+    normalized: dict[str, Any] = {}
+    for key, value in request.items():
+        if value is None or value == "":
+            continue
+        if key in {"startPosition", "limit"}:
+            normalized[key] = str(_validate_bulk_positive_int(key, value, index))
+        elif isinstance(value, int) and not isinstance(value, bool):
+            normalized[key] = str(value)
+        else:
+            normalized[key] = value
+    return normalized
+
+
+def _validate_bulk_positive_int(name: str, value: Any, index: int) -> int:
+    """bulkリクエスト内の正数パラメータを検査する."""
+    if isinstance(value, bool):
+        raise ValueError(f"requests[{index}].{name}は1以上の整数を指定してください。")
+    if isinstance(value, int):
+        int_value = value
+    elif isinstance(value, str) and value.isdecimal():
+        int_value = int(value)
+    else:
+        raise ValueError(f"requests[{index}].{name}は1以上の整数を指定してください。")
+    return _validate_positive_int(f"requests[{index}].{name}", int_value)
 
 
 def _build_bulk_requests(
@@ -605,11 +640,11 @@ def _build_bulk_requests(
     requests: list[dict[str, Any]] = []
     common: dict[str, Any] = {}
     if start_position is not None:
-        common["startPosition"] = _validate_positive_int(
-            "start_position", start_position
+        common["startPosition"] = str(
+            _validate_positive_int("start_position", start_position)
         )
     if limit is not None:
-        common["limit"] = _validate_positive_int("limit", limit)
+        common["limit"] = str(_validate_positive_int("limit", limit))
 
     for stats_data_id in stats_data_ids or []:
         requests.append({"statsDataId": stats_data_id, **common})
