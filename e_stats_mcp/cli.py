@@ -47,7 +47,9 @@ def _print_csv(data: str) -> None:
 
 @app.command("search")
 def search_command(
-    keyword: Annotated[str, typer.Argument(help="検索キーワード（例: 人口, GDP, 雇用）")],
+    keyword: Annotated[
+        str, typer.Argument(help="検索キーワード（例: 人口, GDP, 雇用）")
+    ],
     limit: Annotated[int, typer.Option("--limit", "-l", help="取得件数")] = 20,
 ) -> None:
     """キーワードで統計表を検索する."""
@@ -184,7 +186,9 @@ def stats_data_bulk_command(
         Optional[str],
         typer.Option("--datasets", "-d", help="データセットIDリスト（カンマ区切り）"),
     ] = None,
-    limit: Annotated[Optional[int], typer.Option("--limit", "-l", help="取得件数")] = None,
+    limit: Annotated[
+        Optional[int], typer.Option("--limit", "-l", help="取得件数")
+    ] = None,
 ) -> None:
     """複数の統計表/データセットから統計データを一括取得する."""
     requests = json.loads(request_json) if request_json else None
@@ -230,7 +234,9 @@ def get_dataset_command(
     dataset_id: Annotated[
         Optional[str], typer.Argument(help="データセットID（省略時は一覧取得）")
     ] = None,
-    limit: Annotated[Optional[int], typer.Option("--limit", "-l", help="取得件数")] = None,
+    limit: Annotated[
+        Optional[int], typer.Option("--limit", "-l", help="取得件数")
+    ] = None,
 ) -> None:
     """データセットを参照する."""
     result = asyncio.run(get_dataset(dataset_id=dataset_id, limit=limit))
@@ -251,7 +257,9 @@ def data_catalog_command(
     stats_code: Annotated[
         Optional[str], typer.Option("--code", "-c", help="政府統計コード")
     ] = None,
-    limit: Annotated[Optional[int], typer.Option("--limit", "-l", help="取得件数")] = None,
+    limit: Annotated[
+        Optional[int], typer.Option("--limit", "-l", help="取得件数")
+    ] = None,
     csv: Annotated[bool, typer.Option("--csv", help="CSV形式で出力")] = False,
 ) -> None:
     """データカタログ情報を取得する."""
@@ -264,7 +272,10 @@ def data_catalog_command(
                 limit=limit,
             )
         )
-        _print_csv(csv_result)
+        if isinstance(csv_result, str):
+            _print_csv(csv_result)
+        else:
+            _print_json(csv_result)
     else:
         json_result = asyncio.run(
             get_data_catalog(

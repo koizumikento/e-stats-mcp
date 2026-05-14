@@ -4,7 +4,12 @@ import csv
 from io import StringIO
 from typing import Any, cast
 
+import httpx
+
 from e_stats_mcp.tools.stats import _make_request, _validate_positive_int
+
+BROAD_CATALOG_MATCH_THRESHOLD = 1000
+CATALOG_GUIDANCE_KEY = "MCP_GUIDANCE"
 
 
 async def get_data_catalog(
@@ -18,8 +23,11 @@ async def get_data_catalog(
     updated_date: str | None = None,
     start_position: int | None = None,
     limit: int | None = None,
-) -> dict:
+) -> dict[str, Any]:
     """データカタログ情報を取得する.
+
+    広い探索にはget_stats_listを使い、stats_code等で候補を絞ってから
+    get_data_catalogを呼ぶと安定しやすい。
 
     Args:
         search_word: 検索キーワード
@@ -49,8 +57,17 @@ async def get_data_catalog(
         limit=limit,
     )
 
-    response = await _make_request("json/getDataCatalog", params)
-    return cast(dict[str, Any], response)
+    try:
+        response = await _make_request("json/getDataCatalog", params)
+    except httpx.TimeoutException:
+        return _build_data_catalog_recovery_result(
+            code="UPSTREAM_TIMEOUT_QUERY_TOO_BROAD",
+            search_word=search_word,
+            matched_count_hint=None,
+        )
+
+    result = cast(dict[str, Any], response)
+    return _add_broad_catalog_guidance(result, params)
 
 
 def _build_data_catalog_params(
@@ -104,7 +121,7 @@ async def get_data_catalog_csv(
     updated_date: str | None = None,
     start_position: int | None = None,
     limit: int | None = None,
-) -> str:
+) -> str | dict[str, Any]:
     """データカタログ情報をCSVで取得する.
 
     e-Stat API 3.0にはデータカタログのCSVエンドポイントがないため、
@@ -122,8 +139,117 @@ async def get_data_catalog_csv(
         start_position=start_position,
         limit=limit,
     )
-    response = await _make_request("json/getDataCatalog", params)
+    try:
+        response = await _make_request("json/getDataCatalog", params)
+    except httpx.TimeoutException:
+        return _build_data_catalog_recovery_result(
+            code="UPSTREAM_TIMEOUT_QUERY_TOO_BROAD",
+            search_word=search_word,
+            matched_count_hint=None,
+        )
     return _data_catalog_response_to_csv(cast(dict[str, Any], response))
+
+
+def _add_broad_catalog_guidance(
+    response: dict[str, Any],
+    params: dict[str, str],
+) -> dict[str, Any]:
+    """広すぎるデータカタログ検索に次アクションのヒントを追加する."""
+    matched_count = _get_data_catalog_matched_count(response)
+    if matched_count is None or matched_count < BROAD_CATALOG_MATCH_THRESHOLD:
+        return response
+    if not _is_broad_catalog_search(params):
+        return response
+
+    response[CATALOG_GUIDANCE_KEY] = _build_data_catalog_recovery_error(
+        code="DATA_CATALOG_QUERY_TOO_BROAD",
+        search_word=params.get("searchWord"),
+        matched_count_hint=matched_count,
+    )
+    return response
+
+
+def _is_broad_catalog_search(params: dict[str, str]) -> bool:
+    narrowing_keys = {
+        "statsCode",
+        "statsField",
+        "governmentCode",
+        "surveyYears",
+        "openYears",
+        "statsNameList",
+        "updatedDate",
+    }
+    return bool(params.get("searchWord")) and not any(
+        key in params for key in narrowing_keys
+    )
+
+
+def _get_data_catalog_matched_count(response: dict[str, Any]) -> int | None:
+    number = (
+        response.get("GET_DATA_CATALOG", {})
+        .get("DATA_CATALOG_LIST_INF", {})
+        .get("NUMBER")
+    )
+    try:
+        return int(number)
+    except (TypeError, ValueError):
+        return None
+
+
+def _build_data_catalog_recovery_result(
+    *,
+    code: str,
+    search_word: str | None,
+    matched_count_hint: int | None,
+) -> dict[str, Any]:
+    error = _build_data_catalog_recovery_error(
+        code=code,
+        search_word=search_word,
+        matched_count_hint=matched_count_hint,
+    )
+    return {
+        "isError": True,
+        "structuredContent": {"error": error},
+        "content": [
+            {
+                "type": "text",
+                "text": "Data catalog query is too broad. Try get_stats_list first, then retry get_data_catalog with stats_code or another narrowing parameter.",
+            }
+        ],
+    }
+
+
+def _build_data_catalog_recovery_error(
+    *,
+    code: str,
+    search_word: str | None,
+    matched_count_hint: int | None,
+) -> dict[str, Any]:
+    query = search_word or ""
+    suggested_next_calls: list[dict[str, Any]] = []
+    if query:
+        suggested_next_calls.append(
+            {
+                "tool": "get_stats_list",
+                "arguments": {"search_word": query, "limit": 10},
+                "reason": "統計表候補を先に探索し、stats_codeを特定する",
+            }
+        )
+    suggested_next_calls.append(
+        {
+            "tool": "get_data_catalog",
+            "arguments": {"stats_code": "00200524", "limit": 1},
+            "reason": "stats_code等で対象統計を絞ってデータカタログを取得する",
+        }
+    )
+
+    return {
+        "code": code,
+        "message": "e-Stat data catalog search timed out or matched too many results. Narrow the query before retrying.",
+        "retryable": True,
+        "matched_count_hint": matched_count_hint,
+        "suggested_next_calls": suggested_next_calls,
+    }
 
 
 def _data_catalog_response_to_csv(response: dict[str, Any]) -> str:

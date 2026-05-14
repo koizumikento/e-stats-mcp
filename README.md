@@ -189,6 +189,12 @@ Add to `.cursor/mcp.json` in your project root:
 
 - `get_data_catalog` / `get_data_catalog_csv` - データカタログ情報を取得
 
+広いキーワードだけでデータカタログを検索すると、e-Stat API側で非常に多くの候補に一致して
+時間がかかることがあります。まず `get_stats_list` で統計表候補を探し、`stats_code` などで
+絞ってから `get_data_catalog` を呼ぶのがおすすめです。広すぎる検索や upstream timeout では、
+MCPクライアントが自己修正しやすいように `MCP_GUIDANCE` または `structuredContent.error` に
+次に試すべき呼び出しを含めて返します。
+
 ### 分野コード
 
 - `get_stats_fields` - 統計分野コード一覧（静的マッピング）

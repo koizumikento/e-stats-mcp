@@ -31,6 +31,9 @@ Use `uv run ruff format ...` for formatting touched Python files.
   list paging. `get_dataset` applies list paging inside the MCP server.
 - `getDataCatalog` has no CSV endpoint in e-Stat API 3.0. `get_data_catalog_csv`
   fetches JSON and converts `DATA_CATALOG_INF` records to CSV locally.
+- Broad `getDataCatalog` searches can be slow even with a small `limit`.
+  Prefer `get_stats_list` first, then retry `get_data_catalog` with `stats_code`
+  or another narrowing parameter. Keep recovery hints machine-readable.
 
 ## Testing
 

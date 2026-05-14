@@ -43,19 +43,21 @@ mcp = FastMCP(
 )
 
 # ツールを登録
-mcp.tool()(get_stats_list)
-mcp.tool()(get_stats_list_csv)
-mcp.tool()(get_meta_info)
-mcp.tool()(get_meta_info_csv)
-mcp.tool()(get_stats_data)
-mcp.tool()(get_stats_data_csv)
-mcp.tool()(get_stats_data_bulk)
-mcp.tool()(search_stats_by_keyword)
+READ_ONLY_TOOL_ANNOTATIONS = {"readOnlyHint": True}
+
+mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)(get_stats_list)
+mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)(get_stats_list_csv)
+mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)(get_meta_info)
+mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)(get_meta_info_csv)
+mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)(get_stats_data)
+mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)(get_stats_data_csv)
+mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)(get_stats_data_bulk)
+mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)(search_stats_by_keyword)
 mcp.tool()(post_dataset)
-mcp.tool()(get_dataset)
-mcp.tool()(get_data_catalog)
-mcp.tool()(get_data_catalog_csv)
-mcp.tool()(get_stats_fields)
+mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)(get_dataset)
+mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)(get_data_catalog)
+mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)(get_data_catalog_csv)
+mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)(get_stats_fields)
 
 
 def main() -> None:

@@ -1,11 +1,15 @@
 import json
+import importlib
 from typing import Any
 
+import httpx
 import pytest
 
 from e_stats_mcp.tools import dataset
 from e_stats_mcp.tools import catalog
 from e_stats_mcp.tools import stats
+
+server_main = importlib.import_module("e_stats_mcp.main")
 
 
 class DummyResponse:
@@ -517,6 +521,81 @@ async def test_get_data_catalog_csv_uses_json_endpoint_and_converts(monkeypatch)
     assert "STAT_NAME.$" in result
     assert "STAT_NAME.@code" in result
     assert '"sample, title"' in result
+
+
+@pytest.mark.asyncio
+async def test_get_data_catalog_adds_guidance_for_broad_search(monkeypatch):
+    monkeypatch.setenv("E_STAT_APP_ID", "dummy")
+    response = DummyResponse(
+        json_data={
+            "GET_DATA_CATALOG": {
+                "RESULT": {"STATUS": 0},
+                "PARAMETER": {"SEARCH_WORD": "人口", "LIMIT": "1"},
+                "DATA_CATALOG_LIST_INF": {
+                    "NUMBER": 9912,
+                    "RESULT_INF": {"FROM_NUMBER": 1, "TO_NUMBER": 1},
+                    "DATA_CATALOG_INF": [{"TITLE": "交通事故の発生状況"}],
+                },
+            }
+        }
+    )
+    client = DummyClient(response)
+
+    def factory(*args, **kwargs):
+        return client
+
+    monkeypatch.setattr(stats.httpx, "AsyncClient", factory)
+
+    result = await catalog.get_data_catalog(search_word="人口", limit=1)
+
+    guidance = result[catalog.CATALOG_GUIDANCE_KEY]
+    assert guidance["code"] == "DATA_CATALOG_QUERY_TOO_BROAD"
+    assert guidance["retryable"] is True
+    assert guidance["matched_count_hint"] == 9912
+    assert guidance["suggested_next_calls"][0]["tool"] == "get_stats_list"
+
+
+@pytest.mark.asyncio
+async def test_get_data_catalog_returns_recovery_result_on_timeout(monkeypatch):
+    async def raise_timeout(*args, **kwargs):
+        raise httpx.TimeoutException("timeout")
+
+    monkeypatch.setattr(catalog, "_make_request", raise_timeout)
+
+    result = await catalog.get_data_catalog(search_word="人口", limit=1)
+
+    assert result["isError"] is True
+    error = result["structuredContent"]["error"]
+    assert error["code"] == "UPSTREAM_TIMEOUT_QUERY_TOO_BROAD"
+    assert error["retryable"] is True
+    assert error["suggested_next_calls"][0]["tool"] == "get_stats_list"
+
+
+@pytest.mark.asyncio
+async def test_get_data_catalog_csv_returns_recovery_result_on_timeout(monkeypatch):
+    async def raise_timeout(*args, **kwargs):
+        raise httpx.TimeoutException("timeout")
+
+    monkeypatch.setattr(catalog, "_make_request", raise_timeout)
+
+    result = await catalog.get_data_catalog_csv(search_word="人口", limit=1)
+
+    assert isinstance(result, dict)
+    assert result["isError"] is True
+    assert (
+        result["structuredContent"]["error"]["suggested_next_calls"][0]["tool"]
+        == "get_stats_list"
+    )
+
+
+@pytest.mark.asyncio
+async def test_read_only_tools_have_annotations():
+    tools = await server_main.mcp.get_tools()
+
+    assert tools["get_data_catalog"].annotations.readOnlyHint is True
+    assert tools["get_data_catalog_csv"].annotations.readOnlyHint is True
+    assert tools["get_stats_list"].annotations.readOnlyHint is True
+    assert tools["post_dataset"].annotations is None
 
 
 def test_parse_post_dataset_xml_ignores_namespaces():
