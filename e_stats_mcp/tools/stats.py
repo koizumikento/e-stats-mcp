@@ -4,8 +4,8 @@ e-Stat APIを使用した統計データの検索・取得ツール。
 """
 
 import json
-from typing import Any, cast
 import xml.etree.ElementTree as ET
+from typing import Any, cast
 
 import httpx
 
@@ -585,11 +585,11 @@ async def get_stats_data_bulk(
 def _validate_bulk_requests(requests: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """statsDatasSpec用リクエスト配列の最低限の形を検査する."""
     if not isinstance(requests, list):
-        raise ValueError("requestsは取得条件dictのリストで指定してください。")
+        raise TypeError("requestsは取得条件dictのリストで指定してください。")
     normalized_requests: list[dict[str, Any]] = []
     for index, request in enumerate(requests, start=1):
         if not isinstance(request, dict):
-            raise ValueError(f"requests[{index}]はdictで指定してください。")
+            raise TypeError(f"requests[{index}]はdictで指定してください。")
         normalized_request = _normalize_bulk_request(request, index)
         has_stats_data_id = "statsDataId" in normalized_request
         has_dataset_id = "dataSetId" in normalized_request
@@ -619,7 +619,7 @@ def _normalize_bulk_request(request: dict[str, Any], index: int) -> dict[str, An
 def _validate_bulk_positive_int(name: str, value: Any, index: int) -> int:
     """bulkリクエスト内の正数パラメータを検査する."""
     if isinstance(value, bool):
-        raise ValueError(f"requests[{index}].{name}は1以上の整数を指定してください。")
+        raise TypeError(f"requests[{index}].{name}は1以上の整数を指定してください。")
     if isinstance(value, int):
         int_value = value
     elif isinstance(value, str) and value.isdecimal():

@@ -1,13 +1,11 @@
-import json
 import importlib
-from typing import Any
+import json
+from typing import Any, Self
 
 import httpx
 import pytest
 
-from e_stats_mcp.tools import dataset
-from e_stats_mcp.tools import catalog
-from e_stats_mcp.tools import stats
+from e_stats_mcp.tools import catalog, dataset, stats
 
 server_main = importlib.import_module("e_stats_mcp.main")
 
@@ -29,7 +27,7 @@ class DummyClient:
         self.response = response
         self.calls: list[tuple[str, str, dict[str, Any] | None, Any, Any]] = []
 
-    async def __aenter__(self) -> "DummyClient":
+    async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(self, exc_type, exc, tb) -> bool:

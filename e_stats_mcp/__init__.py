@@ -12,7 +12,7 @@ __version__ = "0.4.0"
 if TYPE_CHECKING:
     from e_stats_mcp.cli import cli_main
 
-__all__ = ["__version__", "main", "mcp", "cli_main"]
+__all__ = ["__version__", "cli_main", "main", "mcp"]
 
 
 def __getattr__(name: str):

@@ -5,7 +5,7 @@
 
 import asyncio
 import json
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 import typer
 
@@ -60,16 +60,16 @@ def search_command(
 @app.command("list")
 def stats_list_command(
     search_word: Annotated[
-        Optional[str], typer.Option("--search", "-s", help="検索キーワード")
+        str | None, typer.Option("--search", "-s", help="検索キーワード")
     ] = None,
     survey_years: Annotated[
-        Optional[str], typer.Option("--year", "-y", help="調査年（YYYY形式）")
+        str | None, typer.Option("--year", "-y", help="調査年（YYYY形式）")
     ] = None,
     stats_field: Annotated[
-        Optional[str], typer.Option("--field", "-f", help="統計分野コード（2桁）")
+        str | None, typer.Option("--field", "-f", help="統計分野コード（2桁）")
     ] = None,
     stats_code: Annotated[
-        Optional[str], typer.Option("--code", "-c", help="政府統計コード")
+        str | None, typer.Option("--code", "-c", help="政府統計コード")
     ] = None,
     limit: Annotated[int, typer.Option("--limit", "-l", help="取得件数")] = 10,
     csv: Annotated[bool, typer.Option("--csv", help="CSV形式で出力")] = False,
@@ -123,19 +123,19 @@ def meta_info_command(
 def stats_data_command(
     stats_data_id: Annotated[str, typer.Argument(help="統計表ID")],
     cdcat01: Annotated[
-        Optional[str], typer.Option("--cat01", help="分類事項01のコード")
+        str | None, typer.Option("--cat01", help="分類事項01のコード")
     ] = None,
     cdcat02: Annotated[
-        Optional[str], typer.Option("--cat02", help="分類事項02のコード")
+        str | None, typer.Option("--cat02", help="分類事項02のコード")
     ] = None,
     cdcat03: Annotated[
-        Optional[str], typer.Option("--cat03", help="分類事項03のコード")
+        str | None, typer.Option("--cat03", help="分類事項03のコード")
     ] = None,
     cdtime: Annotated[
-        Optional[str], typer.Option("--time", "-t", help="時間軸コード")
+        str | None, typer.Option("--time", "-t", help="時間軸コード")
     ] = None,
     cdarea: Annotated[
-        Optional[str], typer.Option("--area", "-a", help="地域コード")
+        str | None, typer.Option("--area", "-a", help="地域コード")
     ] = None,
     limit: Annotated[int, typer.Option("--limit", "-l", help="取得件数")] = 100,
     csv: Annotated[bool, typer.Option("--csv", help="CSV形式で出力")] = False,
@@ -172,22 +172,22 @@ def stats_data_command(
 @app.command("data-bulk")
 def stats_data_bulk_command(
     request_json: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             "--request-json",
             help="statsDatasSpec用の取得条件リストJSON。--ids/--datasetsより優先",
         ),
     ] = None,
     stats_data_ids: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--ids", "-i", help="統計表IDリスト（カンマ区切り）"),
     ] = None,
     dataset_ids: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--datasets", "-d", help="データセットIDリスト（カンマ区切り）"),
     ] = None,
     limit: Annotated[
-        Optional[int], typer.Option("--limit", "-l", help="取得件数")
+        int | None, typer.Option("--limit", "-l", help="取得件数")
     ] = None,
 ) -> None:
     """複数の統計表/データセットから統計データを一括取得する."""
@@ -213,7 +213,7 @@ def post_dataset_command(
     name: Annotated[str, typer.Option("--name", "-n", help="データセット名")],
     stats_data_id: Annotated[str, typer.Option("--id", "-i", help="統計表ID")],
     conditions_json: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--conditions-json", help="絞り込み条件のJSON"),
     ] = None,
 ) -> None:
@@ -232,10 +232,10 @@ def post_dataset_command(
 @app.command("dataset")
 def get_dataset_command(
     dataset_id: Annotated[
-        Optional[str], typer.Argument(help="データセットID（省略時は一覧取得）")
+        str | None, typer.Argument(help="データセットID（省略時は一覧取得）")
     ] = None,
     limit: Annotated[
-        Optional[int], typer.Option("--limit", "-l", help="取得件数")
+        int | None, typer.Option("--limit", "-l", help="取得件数")
     ] = None,
 ) -> None:
     """データセットを参照する."""
@@ -249,16 +249,16 @@ def get_dataset_command(
 @app.command("catalog")
 def data_catalog_command(
     search_word: Annotated[
-        Optional[str], typer.Option("--search", "-s", help="検索キーワード")
+        str | None, typer.Option("--search", "-s", help="検索キーワード")
     ] = None,
     stats_field: Annotated[
-        Optional[str], typer.Option("--field", "-f", help="統計分野コード")
+        str | None, typer.Option("--field", "-f", help="統計分野コード")
     ] = None,
     stats_code: Annotated[
-        Optional[str], typer.Option("--code", "-c", help="政府統計コード")
+        str | None, typer.Option("--code", "-c", help="政府統計コード")
     ] = None,
     limit: Annotated[
-        Optional[int], typer.Option("--limit", "-l", help="取得件数")
+        int | None, typer.Option("--limit", "-l", help="取得件数")
     ] = None,
     csv: Annotated[bool, typer.Option("--csv", help="CSV形式で出力")] = False,
 ) -> None:

@@ -3,9 +3,9 @@
 e-Stat APIのデータセット登録(postDataset)・参照(refDataset)を扱う。
 """
 
+import xml.etree.ElementTree as ET
 from copy import deepcopy
 from typing import Any, cast
-import xml.etree.ElementTree as ET
 
 from e_stats_mcp.tools.stats import (
     _make_request,
