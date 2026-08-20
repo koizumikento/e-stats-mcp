@@ -15,6 +15,9 @@
 
 - e-Stat API: <https://www.e-stat.go.jp/api/>
 - API仕様: <https://www.e-stat.go.jp/api/api-info/e-stat-manual3-0>
+- 利用規約: <https://www.e-stat.go.jp/terms-of-use>
+
+出典：政府統計の総合窓口（e-Stat）（<https://www.e-stat.go.jp/>）
 
 ## Installation
 
@@ -309,4 +312,4 @@ Arguments: {}
 
 ## License
 
-MIT
+[MIT](LICENSE)

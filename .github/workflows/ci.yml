@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          python-version: "3.11"
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run mypy e_stats_mcp
+      - run: uv run pytest
+      - run: uv build
+      - name: Verify clean wheel install
+        shell: bash
+        run: |
+          WHEEL=$(find dist -name '*.whl' -print -quit)
+          uv run --isolated --no-project --with "$WHEEL" python - <<'PY'
+          import asyncio
+          from e_stats_mcp import __version__, mcp
+
+          assert __version__ == "0.4.0"
+          assert len(asyncio.run(mcp.list_tools())) == 13
+          PY

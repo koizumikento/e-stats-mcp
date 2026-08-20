@@ -622,7 +622,7 @@ async def test_get_data_catalog_csv_returns_recovery_result_on_timeout(monkeypat
 
 @pytest.mark.asyncio
 async def test_read_only_tools_have_annotations():
-    tools = await server_main.mcp.get_tools()
+    tools = {tool.name: tool for tool in await server_main.mcp.list_tools()}
 
     assert tools["get_data_catalog"].annotations.readOnlyHint is True
     assert tools["get_data_catalog_csv"].annotations.readOnlyHint is True
