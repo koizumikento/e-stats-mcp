@@ -1,10 +1,16 @@
 import importlib
 import json
+import sys
 from typing import Any, Self
 
 import httpx
 import pytest
+from fastmcp import Client
+from fastmcp.client.transports import StdioTransport
+from typer.testing import CliRunner
 
+from e_stats_mcp.cli import app
+from e_stats_mcp.settings import Settings
 from e_stats_mcp.tools import catalog, dataset, stats
 
 server_main = importlib.import_module("e_stats_mcp.main")
@@ -622,9 +628,9 @@ async def test_get_data_catalog_csv_returns_recovery_result_on_timeout(monkeypat
 async def test_read_only_tools_have_annotations():
     tools = {tool.name: tool for tool in await server_main.mcp.list_tools()}
 
-    assert tools["get_data_catalog"].annotations.readOnlyHint is True
-    assert tools["get_data_catalog_csv"].annotations.readOnlyHint is True
-    assert tools["get_stats_list"].annotations.readOnlyHint is True
+    assert tools["get_data_catalog"].annotations.read_only_hint is True
+    assert tools["get_data_catalog_csv"].annotations.read_only_hint is True
+    assert tools["get_stats_list"].annotations.read_only_hint is True
     assert tools["post_dataset"].annotations is None
 
 
@@ -671,3 +677,47 @@ async def test_post_dataset_raises_for_xml_error(monkeypatch):
 
     with pytest.raises(stats.EStatAPIError, match="100"):
         await dataset.post_dataset(dataset_name="sample", stats_data_id="0001")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["auto", "legacy"])
+async def test_mcp_protocol_and_stats_response(monkeypatch, mode):
+    payload = {
+        "GET_STATS_LIST": {"RESULT": {"STATUS": 0}, "DATALIST_INF": {"TABLE_INF": []}}
+    }
+    http_client = DummyClient(DummyResponse(json_data=payload))
+    monkeypatch.setattr(stats.httpx, "AsyncClient", lambda **kwargs: http_client)
+    monkeypatch.setattr(stats, "get_settings", lambda: Settings(E_STAT_APP_ID="dummy"))
+
+    async with Client(server_main.mcp, mode=mode) as client:
+        assert len(await client.list_tools()) == 13
+        result = await client.call_tool(
+            "get_stats_list", {"search_word": "test", "limit": 5}
+        )
+        assert result.data == payload
+        invalid = await client.call_tool(
+            "get_stats_list", {"limit": "invalid"}, raise_on_error=False
+        )
+        assert invalid.is_error
+    assert len(http_client.calls) == 1
+    params = http_client.calls[0][2]
+    assert params is not None
+    assert params["searchWord"] == "test"
+    assert params["limit"] == "5"
+
+
+@pytest.mark.asyncio
+async def test_mcp_stdio_initialization():
+    transport = StdioTransport(
+        command=sys.executable,
+        args=["-c", "from e_stats_mcp import main; main()", "--mcp"],
+        env={"PYTHONUTF8": "1", "E_STAT_APP_ID": "dummy"},
+    )
+    async with Client(transport, mode="legacy", timeout=10) as client:
+        assert len(await client.list_tools()) == 13
+
+
+def test_cli_help():
+    result = CliRunner().invoke(app, ["--help"])
+    assert result.exit_code == 0
+    assert "search" in result.output
