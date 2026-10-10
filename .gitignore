@@ -78,3 +78,11 @@ dmypy.json
 Thumbs.db
 
 mcp.json
+
+# Sites Worker build and local secrets
+node_modules/
+.dev.vars
+.env.*
+!.env.example
+.sites-generated/
+.uv-cache/

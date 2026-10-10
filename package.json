@@ -1,0 +1,19 @@
+{
+  "name": "e-stats-mcp-sites",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-sites.mjs",
+    "test": "node --test sites-tests/*.test.mjs",
+    "package": "node scripts/package-sites.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.3.1",
+    "fast-xml-parser": "5.11.2"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.3.1",
+    "esbuild": "0.28.2",
+    "miniflare": "5.20261006.1-alpha"
+  }
+}
