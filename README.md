@@ -166,6 +166,12 @@ Add to `.cursor/mcp.json` in your project root:
 
 ## Available Tools
 
+### Sites Worker
+
+Python library / CLI / stdioに加え、Sites内のWorkerとして全13ツールを実行できます。
+別backend・tunnel・DBは不要です。ビルド、runtime secrets、所有者認可、配備・検証と
+検証資源の片づけは [Sites手順](docs/sites.md) を参照してください。
+
 ### 統計表検索
 
 - `get_stats_list` / `get_stats_list_csv` - 統計表情報を検索

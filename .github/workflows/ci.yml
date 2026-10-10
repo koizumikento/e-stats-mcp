@@ -31,3 +31,19 @@ jobs:
           assert __version__ == "0.4.0"
           assert len(asyncio.run(mcp.list_tools())) == 13
           PY
+  sites-worker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+      - run: uv sync --frozen
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - run: npm run package
