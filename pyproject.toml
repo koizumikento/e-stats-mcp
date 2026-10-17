@@ -28,3 +28,15 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["e_stats_mcp"]
+
+[tool.ruff.lint]
+# Preserve the datetime checks enabled by Ruff before 0.17.
+extend-select = [
+    "DTZ001",
+    "DTZ005",
+    "DTZ006",
+    "DTZ007",
+    "DTZ011",
+    "DTZ012",
+    "DTZ901",
+]
