@@ -433,6 +433,7 @@ name = "e-stats-mcp"
 version = "0.4.0"
 source = { editable = "." }
 dependencies = [
+    { name = "dnspython" },
     { name = "fastmcp" },
     { name = "httpx" },
     { name = "pydantic-settings" },
@@ -449,6 +450,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "dnspython", specifier = ">=2.9.0" },
     { name = "fastmcp", specifier = ">=4.0.10,<5" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "pydantic-settings", specifier = ">=2.12.0" },

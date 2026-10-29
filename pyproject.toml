@@ -5,6 +5,7 @@ description = "MCP server and CLI for the Japanese government e-Stat API 3.0"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "dnspython>=2.9.0",
     "fastmcp>=4.0.10,<5",
     "httpx>=0.28.1",
     "pydantic-settings>=2.12.0",
