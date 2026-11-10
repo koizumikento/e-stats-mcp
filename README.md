@@ -2,6 +2,8 @@
 
 政府統計の総合窓口（e-Stat）API MCP サーバー。
 
+[MCP登録](#mcpクライアントに登録する) · [CLI](#cliで使う) · [Pythonライブラリ](#pythonライブラリとして使う)
+
 ## Features
 
 - 統計表情報の検索（JSON/CSV）
@@ -43,13 +45,15 @@ e-Stat APIを使用するにはアプリケーションIDが必要です。
 2. ユーザー登録・ログイン
 3. アプリケーションIDを取得
 
-環境変数に設定:
+CLIとPythonを実行するシェルで環境変数を設定します。
 
-```bash
-export E_STAT_APP_ID="your-app-id"
+```powershell
+$env:E_STAT_APP_ID = "your-app-id"
 ```
 
-## MCP Server Configuration
+macOSやLinuxでは `export E_STAT_APP_ID="your-app-id"` を使います。
+
+## MCPクライアントに登録する
 
 ### Claude Desktop
 
@@ -113,9 +117,16 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 
 ### Codex
 
-Add to `~/.codex/config.toml`:
+CLIで登録する場合は、次のコマンドを実行します。アプリケーションIDは手元で差し替えてください。
 
-**Direct from GitHub:**
+```sh
+codex mcp add e-stats-mcp --env "E_STAT_APP_ID=your-app-id" -- uvx --python 3.12 --from git+https://github.com/koizumikento/e-stats-mcp.git@master e-stats-mcp
+codex mcp list
+```
+
+新しいセッションで `/mcp` を開くと接続を確認できます。手動で設定する場合は `~/.codex/config.toml` に追加します。 [OpenAI公式のMCP設定](https://learn.chatgpt.com/docs/extend/mcp)
+
+**GitHubから起動する場合**
 
 ```toml
 [mcp_servers.e-stats-mcp]
@@ -211,15 +222,24 @@ JSONオブジェクトを返します。
 
 - `get_stats_fields` - 統計分野コード一覧（静的マッピング）
 
-## CLIとPythonライブラリ
+## CLIで使う
 
-`E_STAT_APP_ID` を設定し、リポジトリのルートで実行します。
+[アプリケーションID](#application-id)を設定してから実行します。通常の出力はJSONで、`--csv` を指定するとCSVを標準出力に返します。
 
-```bash
-uv run e-stats-mcp search 人口 --limit 5
+```sh
+uvx --python 3.12 --from git+https://github.com/koizumikento/e-stats-mcp.git@master e-stats-mcp search 人口 --limit 5
+uvx --python 3.12 --from git+https://github.com/koizumikento/e-stats-mcp.git@master e-stats-mcp data-bulk --ids "0003411001,0003411002" --limit 5 --csv
 ```
 
-Pythonからは `e_stats_mcp.tools` の非同期関数を呼び出せます。
+## Pythonライブラリとして使う
+
+自分のPythonプロジェクト（`pyproject.toml` があるディレクトリ）で依存関係に追加します。[CLIで使う](#cliで使う)と同様に、実行するシェルで `E_STAT_APP_ID` を設定してください。
+
+```sh
+uv add "git+https://github.com/koizumikento/e-stats-mcp.git@master"
+```
+
+次のコードを `example.py` に保存し、同じディレクトリで `uv run python example.py` を実行します。
 
 ```python
 import asyncio
