@@ -206,8 +206,8 @@ Python library / CLI / stdioに加え、Sites内のWorkerとして全14ツール
 - `post_dataset` - データセット登録（postDataset）
 - `get_dataset` - データセット参照（refDataset）
 
-`refDataset` はAPI側に一覧取得用の `limit` / `startPosition` がないため、
-`get_dataset` でデータセット一覧を取得する場合の `limit` / `start_position` はMCP側で適用されます。
+e-Stat APIの `refDataset` では、一覧取得時に `limit` や `startPosition` を指定できません。
+`get_dataset` で一覧を取得すると、MCPが `limit` と `start_position` を適用します。
 
 ### データカタログ
 
@@ -322,8 +322,8 @@ Tool: get_data_catalog_csv
 Arguments: {"search_word": "人口", "limit": 20}
 ```
 
-e-Stat API 3.0にはデータカタログ取得のCSVエンドポイントがないため、MCP側で
-JSON版 `getDataCatalog` の `DATA_CATALOG_INF` をCSVへ変換して返します。
+e-Stat API 3.0にはデータカタログをCSVで取得する機能がありません。
+MCPは `getDataCatalog` がJSONで返す `DATA_CATALOG_INF` をCSVに変換します。
 
 ### 統計分野コード一覧を取得
 
