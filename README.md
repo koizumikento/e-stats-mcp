@@ -1,10 +1,10 @@
 # e-Stat MCP
 
-政府統計の総合窓口（e-Stat）API MCP サーバー。
+政府統計の総合窓口（e-Stat）で統計表を探し、統計値や表の項目を取得できます。MCP、CLI、Pythonライブラリとして使えます。
 
 [MCP登録](#mcpクライアントに登録する) · [CLI](#cliで使う) · [Pythonライブラリ](#pythonライブラリとして使う)
 
-## Features
+## できること
 
 - 統計表情報の検索（JSON/CSV）
 - 統計データの取得・一括取得（JSON/CSV）
@@ -13,7 +13,7 @@
 - データカタログ情報の取得（JSON/CSV）
 - キーワード検索
 
-## Data Source
+## データの出典
 
 - e-Stat API: <https://www.e-stat.go.jp/api/>
 - API仕様: <https://www.e-stat.go.jp/api/api-info/e-stat-manual3-0>
@@ -21,13 +21,13 @@
 
 出典：政府統計の総合窓口（e-Stat）（<https://www.e-stat.go.jp/>）
 
-## Installation
+## インストール
 
 ```bash
 uv tool install git+https://github.com/koizumikento/e-stats-mcp.git
 ```
 
-Or install locally:
+リポジトリをクローンして使う場合は、次のコマンドを実行します。
 
 ```bash
 git clone https://github.com/koizumikento/e-stats-mcp.git
@@ -35,9 +35,9 @@ cd e-stats-mcp
 uv sync
 ```
 
-## Configuration
+## 設定
 
-### Application ID
+### アプリケーションID
 
 e-Stat APIを使用するにはアプリケーションIDが必要です。
 
@@ -57,9 +57,12 @@ macOSやLinuxでは `export E_STAT_APP_ID="your-app-id"` を使います。
 
 ### Claude Desktop
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+OSに応じて、次のファイルに設定を追加します。
 
-**Installed version:**
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+**インストール済みのコマンドで起動する場合**
 
 ```json
 {
@@ -74,7 +77,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 }
 ```
 
-**Direct from GitHub:**
+**GitHubから直接起動する場合**
 
 ```json
 {
@@ -94,7 +97,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 }
 ```
 
-**Local development:**
+**クローン先から起動する場合**
 
 ```json
 {
@@ -139,7 +142,7 @@ args = [
 env = { E_STAT_APP_ID = "your-app-id" }
 ```
 
-**Local development:**
+**クローン先から起動する場合**
 
 ```toml
 [mcp_servers.e-stats-mcp]
@@ -155,7 +158,7 @@ env = { E_STAT_APP_ID = "your-app-id" }
 
 ### Cursor
 
-Add to `.cursor/mcp.json` in your project root:
+プロジェクトのルートにある `.cursor/mcp.json` に設定を追加します。
 
 ```json
 {
@@ -175,7 +178,7 @@ Add to `.cursor/mcp.json` in your project root:
 }
 ```
 
-## Available Tools
+## ツール
 
 ### Sites Worker
 
@@ -210,13 +213,9 @@ Python library / CLI / stdioに加え、Sites内のWorkerとして全14ツール
 
 - `get_data_catalog` / `get_data_catalog_csv` - データカタログ情報を取得
 
-広いキーワードだけでデータカタログを検索すると、e-Stat API側で非常に多くの候補に一致して
-時間がかかることがあります。まず `get_stats_list` で統計表候補を探し、`stats_code` などで
-絞ってから `get_data_catalog` を呼ぶのがおすすめです。広すぎる検索や upstream timeout では、
-MCPクライアントが自己修正しやすいように `MCP_GUIDANCE` または `structuredContent.error` に
-次に試すべき呼び出しを含めて返します。
-`get_data_catalog_csv` も広すぎる検索ではCSV文字列だけでなく、`csv` と `MCP_GUIDANCE` を含む
-JSONオブジェクトを返します。
+データカタログの検索に時間がかかる場合は、先に `get_stats_list` で統計表を探してください。得られた `stats_code` などで条件を絞り、`get_data_catalog` を呼びます。
+
+検索範囲が広すぎる場合やe-Stat APIが時間内に応答しない場合は、`MCP_GUIDANCE` または `structuredContent.error` に次に試せる呼び出しを返します。`get_data_catalog_csv` も検索範囲が広すぎる場合は、`csv` と `MCP_GUIDANCE` を含むJSONを返します。
 
 ### 分野コード
 
@@ -224,7 +223,7 @@ JSONオブジェクトを返します。
 
 ## CLIで使う
 
-[アプリケーションID](#application-id)を設定してから実行します。通常の出力はJSONで、`--csv` を指定するとCSVを標準出力に返します。
+[アプリケーションID](#アプリケーションid)を設定してから実行します。通常の出力はJSONで、`--csv` を指定するとCSVを標準出力に返します。
 
 ```sh
 uvx --python 3.12 --from git+https://github.com/koizumikento/e-stats-mcp.git@master e-stats-mcp search 人口 --limit 5
@@ -249,7 +248,7 @@ from e_stats_mcp.tools import search_stats_by_keyword
 print(asyncio.run(search_stats_by_keyword("人口", limit=5)))
 ```
 
-## Examples
+## 使用例
 
 ### キーワードで統計を検索
 
@@ -291,9 +290,7 @@ Arguments: {
 }
 ```
 
-`stats_data_ids` / `dataset_ids` も後方互換用に利用できますが、e-Stat APIには内部で
-`statsDatasSpec` JSON文字列として送信されます。`limit` / `startPosition` はMCP側で
-e-Stat APIが受け付ける文字列形式に正規化されます。
+`stats_data_ids` または `dataset_ids` でIDをまとめて指定できます。MCPは、これらの指定をe-Stat API用の `statsDatasSpec` に変換します。`limit` と `startPosition` はAPIが受け付ける文字列に変換します。
 
 CSVが必要な場合は `get_stats_data_bulk_csv` に同じ引数を渡せます。CLIでは `e-stats-mcp data-bulk --ids 0003411001,0003411002 --csv` を使います。
 
@@ -357,6 +354,6 @@ Arguments: {}
 | 16     | 国際                       |
 | 17     | その他                     |
 
-## License
+## ライセンス
 
 [MIT](LICENSE)
