@@ -553,6 +553,55 @@ async def get_stats_data_bulk(
         start_position: 後方互換用のデータ取得開始位置
         limit: 後方互換用の取得件数
     """
+    response = await _request_stats_data_bulk(
+        "json/getStatsDatas",
+        "json",
+        requests,
+        stats_data_ids,
+        dataset_ids,
+        start_position,
+        limit,
+    )
+    return cast(dict[str, Any], response)
+
+
+async def get_stats_data_bulk_csv(
+    requests: list[dict[str, Any]] | None = None,
+    stats_data_ids: list[str] | None = None,
+    dataset_ids: list[str] | None = None,
+    start_position: int | None = None,
+    limit: int | None = None,
+) -> str:
+    """複数の統計表・データセットの統計データを公式APIからCSVで一括取得する.
+
+    Args:
+        requests: statsDatasSpecに入れる取得条件のリスト
+        stats_data_ids: 統計表IDリスト
+        dataset_ids: データセットIDリスト
+        start_position: IDリストを指定した場合のデータ取得開始位置
+        limit: IDリストを指定した場合の取得件数
+    """
+    response = await _request_stats_data_bulk(
+        "getSimpleStatsDatas",
+        "csv",
+        requests,
+        stats_data_ids,
+        dataset_ids,
+        start_position,
+        limit,
+    )
+    return cast(str, response)
+
+
+async def _request_stats_data_bulk(
+    endpoint: str,
+    response_format: str,
+    requests: list[dict[str, Any]] | None,
+    stats_data_ids: list[str] | None,
+    dataset_ids: list[str] | None,
+    start_position: int | None,
+    limit: int | None,
+) -> dict[str, Any] | str:
     stats_datas_spec = (
         _validate_bulk_requests(requests)
         if requests is not None
@@ -573,13 +622,13 @@ async def get_stats_data_bulk(
         "statsDatasSpec": json.dumps(stats_datas_spec, ensure_ascii=False),
     }
 
-    response = await _make_request(
-        "json/getStatsDatas",
+    return await _make_request(
+        endpoint,
         params,
         method="POST",
+        format=response_format,
         data=data,
     )
-    return cast(dict[str, Any], response)
 
 
 def _validate_bulk_requests(requests: list[dict[str, Any]]) -> list[dict[str, Any]]:

@@ -1,6 +1,6 @@
 # Sites Worker
 
-SitesのCloudflare Workerで既存13ツールを実行する追加runtimeです。Python library、
+SitesのCloudflare Workerで14ツールを実行する追加runtimeです。Python library、
 CLI、stdioは変更していません。別backend、tunnel、D1、R2は不要です。
 
 ## Build / test / package
@@ -95,7 +95,7 @@ identity headerはSites dispatchが付与する信頼済み値という前提で
 5. `get_site(include_mcp_connection: true)` の `has_mcp` とplugin IDを確認し、Sitesが
    provisionした既存App/pluginを使用します。新規接続は `plugin_management.suggest_plugins` で
    installation UIを出します。独自OAuthや `codex mcp add/login` は不要です。
-6. authenticated discoveryが13ツールとschemaを返し、接続したclientから
+6. authenticated discoveryが14ツールとschemaを返し、接続したclientから
    `get_stats_fields` が17分野を返すことを確認します。e-Stat readの確認は明示的な
    対象に限定し、dataset writeの実環境試験は別の許可済みfixtureでのみ行います。
 
@@ -104,7 +104,7 @@ build成功やHTTP 200だけで接続・権限・実APIの受入済みとは扱�
 
 ## Contract and operational limits
 
-- 13ツールのschema・default・annotations・JSON/CSV結果をPythonから保持します。
+- 14ツールのschema・default・annotations・JSON/CSV結果をPythonから保持します。
   e-Statへの `dataSetId` / `startPosition` / `statsDataId` などのcasingも維持します。
   HTTP bodyは1 MiBまで、JavaScriptで正確に表せないpaging整数は拒否します。
 - `refDataset` のpagingは取得後にWorker側で適用します。catalog CSVは

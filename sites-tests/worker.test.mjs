@@ -52,7 +52,7 @@ test("standalone artifact: Python parity, MCP SDK, authorization and errors in w
   }));
   t.after(() => mf.dispose());
 
-  await t.test("initialization and discovery preserve all 13 Python definitions", async () => {
+  await t.test("initialization and discovery preserve all 14 Python definitions", async () => {
     const initialized = await rpc(mf, { jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-11-25", capabilities: {}, clientInfo: { name: "fixture", version: "1" } } });
     assert.equal(initialized.data.result.protocolVersion, "2025-11-25");
     assert.equal(initialized.data.result.instructions, contract.instructions);
@@ -126,7 +126,7 @@ test("standalone artifact: Python parity, MCP SDK, authorization and errors in w
     const transport = new StreamableHTTPClientTransport(new URL("https://fixture.example/mcp"), { fetch: (url, init) => mf.dispatchFetch(String(url), { ...init, headers: { ...Object.fromEntries(new Headers(init?.headers)), "oai-authenticated-user-id": "owner" } }) });
     try {
       await client.connect(transport);
-      assert.equal((await client.listTools()).tools.length, 13);
+      assert.equal((await client.listTools()).tools.length, 14);
       const result = await client.callTool({ name: "get_stats_fields", arguments: {} });
       assert.deepEqual(result.structuredContent, { result: contract.fields });
     } finally { await client.close(); }

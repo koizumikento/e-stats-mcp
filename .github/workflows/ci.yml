@@ -29,7 +29,9 @@ jobs:
           from e_stats_mcp import __version__, mcp
 
           assert __version__ == "0.4.0"
-          assert len(asyncio.run(mcp.list_tools())) == 13
+          tools = asyncio.run(mcp.list_tools())
+          assert len(tools) == 14
+          assert "get_stats_data_bulk_csv" in {tool.name for tool in tools}
           PY
   sites-worker:
     runs-on: ubuntu-latest

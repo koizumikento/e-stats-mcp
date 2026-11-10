@@ -17,6 +17,7 @@ from e_stats_mcp.tools import (
     get_meta_info_csv,
     get_stats_data,
     get_stats_data_bulk,
+    get_stats_data_bulk_csv,
     get_stats_data_csv,
     get_stats_fields,
     get_stats_list,
@@ -186,23 +187,24 @@ def stats_data_bulk_command(
         str | None,
         typer.Option("--datasets", "-d", help="データセットIDリスト（カンマ区切り）"),
     ] = None,
-    limit: Annotated[
-        int | None, typer.Option("--limit", "-l", help="取得件数")
-    ] = None,
+    limit: Annotated[int | None, typer.Option("--limit", "-l", help="取得件数")] = None,
+    csv: Annotated[bool, typer.Option("--csv", help="CSV形式で出力")] = False,
 ) -> None:
     """複数の統計表/データセットから統計データを一括取得する."""
     requests = json.loads(request_json) if request_json else None
     ids_list = stats_data_ids.split(",") if stats_data_ids else None
     datasets_list = dataset_ids.split(",") if dataset_ids else None
-    result = asyncio.run(
-        get_stats_data_bulk(
-            requests=requests,
-            stats_data_ids=ids_list,
-            dataset_ids=datasets_list,
-            limit=limit,
+    if csv:
+        result = asyncio.run(
+            get_stats_data_bulk_csv(requests, ids_list, datasets_list, limit=limit)
         )
-    )
-    _print_json(result)
+        typer.echo(result, nl=False)
+    else:
+        _print_json(
+            asyncio.run(
+                get_stats_data_bulk(requests, ids_list, datasets_list, limit=limit)
+            )
+        )
 
 
 # --- データセットコマンド ---

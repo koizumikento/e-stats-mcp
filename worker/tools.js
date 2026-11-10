@@ -197,10 +197,13 @@ function catalogCSV(result) {
 export async function callTool(name, args, env) {
   if (name === "get_stats_fields") return contract.fields;
   if (name === "search_stats_by_keyword") return callTool("get_stats_list", { search_word: args.keyword, limit: args.limit ?? 20 }, env);
-  if (name === "get_stats_data_bulk") {
+  if (name === "get_stats_data_bulk" || name === "get_stats_data_bulk_csv") {
     const requests = bulkRequests(args);
     if (!requests.length) throw new ToolError("requests、stats_data_ids、dataset_idsのいずれかを指定してください。");
-    return request("json/getStatsDatas", { lang: "J" }, env, { method: "POST", data: { statsDatasSpec: JSON.stringify(requests) } });
+    const csv = name.endsWith("_csv");
+    return request(csv ? "getSimpleStatsDatas" : "json/getStatsDatas", { lang: "J" }, env, {
+      method: "POST", format: csv ? "csv" : "json", data: { statsDatasSpec: JSON.stringify(requests) },
+    });
   }
   const params = paramsFor(args);
   if (name === "post_dataset") {

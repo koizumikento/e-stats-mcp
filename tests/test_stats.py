@@ -247,6 +247,30 @@ async def test_get_stats_data_bulk_keeps_legacy_id_inputs(monkeypatch):
     ]
 
 
+def test_data_bulk_csv_cli_uses_official_post_endpoint(monkeypatch):
+    monkeypatch.setenv("E_STAT_APP_ID", "dummy")
+    csv_text = "requestNo,VALUE\n1,12\n2,34\n"
+    client = DummyClient(DummyResponse(text=csv_text))
+    monkeypatch.setattr(stats.httpx, "AsyncClient", lambda: client)
+
+    result = CliRunner().invoke(
+        app, ["data-bulk", "--ids", "0001,0002", "--limit", "10", "--csv"]
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == csv_text
+    method, url, params, data, timeout = client.calls[0]
+    assert method == "POST"
+    assert url == f"{stats.E_STAT_API_BASE}/getSimpleStatsDatas"
+    assert params is None
+    assert data["appId"] == "dummy"
+    assert json.loads(data["statsDatasSpec"]) == [
+        {"statsDataId": "0001", "limit": "10"},
+        {"statsDataId": "0002", "limit": "10"},
+    ]
+    assert timeout == stats.DEFAULT_TIMEOUT
+
+
 @pytest.mark.asyncio
 async def test_get_stats_data_bulk_rejects_malformed_requests(monkeypatch):
     monkeypatch.setenv("E_STAT_APP_ID", "dummy")
@@ -690,7 +714,7 @@ async def test_mcp_protocol_and_stats_response(monkeypatch, mode):
     monkeypatch.setattr(stats, "get_settings", lambda: Settings(E_STAT_APP_ID="dummy"))
 
     async with Client(server_main.mcp, mode=mode) as client:
-        assert len(await client.list_tools()) == 13
+        assert len(await client.list_tools()) == 14
         result = await client.call_tool(
             "get_stats_list", {"search_word": "test", "limit": 5}
         )
@@ -714,7 +738,7 @@ async def test_mcp_stdio_initialization():
         env={"PYTHONUTF8": "1", "E_STAT_APP_ID": "dummy"},
     )
     async with Client(transport, mode="legacy", timeout=10) as client:
-        assert len(await client.list_tools()) == 13
+        assert len(await client.list_tools()) == 14
 
 
 def test_cli_help():

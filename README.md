@@ -168,7 +168,7 @@ Add to `.cursor/mcp.json` in your project root:
 
 ### Sites Worker
 
-Python library / CLI / stdioに加え、Sites内のWorkerとして全13ツールを実行できます。
+Python library / CLI / stdioに加え、Sites内のWorkerとして全14ツールを実行できます。
 別backend・tunnel・DBは不要です。ビルド、runtime secrets、所有者認可、配備・検証と
 検証資源の片づけは [Sites手順](docs/sites.md) を参照してください。
 
@@ -185,6 +185,7 @@ Python library / CLI / stdioに加え、Sites内のWorkerとして全13ツール
 
 - `get_stats_data` / `get_stats_data_csv` - 統計データを取得
 - `get_stats_data_bulk` - statsDatasSpec形式で複数ID/データセットを一括取得
+- `get_stats_data_bulk_csv` - 同じ条件を使い、公式APIのCSV形式で一括取得
 
 ### データセット
 
@@ -273,6 +274,8 @@ Arguments: {
 `stats_data_ids` / `dataset_ids` も後方互換用に利用できますが、e-Stat APIには内部で
 `statsDatasSpec` JSON文字列として送信されます。`limit` / `startPosition` はMCP側で
 e-Stat APIが受け付ける文字列形式に正規化されます。
+
+CSVが必要な場合は `get_stats_data_bulk_csv` に同じ引数を渡せます。CLIでは `e-stats-mcp data-bulk --ids 0003411001,0003411002 --csv` を使います。
 
 ### メタ情報を取得
 
