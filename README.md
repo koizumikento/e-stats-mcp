@@ -210,6 +210,24 @@ JSONオブジェクトを返します。
 
 - `get_stats_fields` - 統計分野コード一覧（静的マッピング）
 
+## CLIとPythonライブラリ
+
+`E_STAT_APP_ID` を設定し、リポジトリのルートで実行します。
+
+```bash
+uv run e-stats-mcp search 人口 --limit 5
+```
+
+Pythonからは `e_stats_mcp.tools` の非同期関数を呼び出せます。
+
+```python
+import asyncio
+
+from e_stats_mcp.tools import search_stats_by_keyword
+
+print(asyncio.run(search_stats_by_keyword("人口", limit=5)))
+```
+
 ## Examples
 
 ### キーワードで統計を検索
